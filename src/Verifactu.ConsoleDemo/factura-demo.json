@@ -1,0 +1,36 @@
+{
+  "Serie": "A",
+  "Numero": "2025-0001",
+  "FechaEmision": "2025-10-28T14:30:00",
+  "Emisor": {
+    "Nif": "B12345678",
+    "Nombre": "JRWEB, S.L.U.",
+    "Direccion": "C/ Ejemplo 123",
+    "Provincia": "Las Palmas",
+    "Municipio": "Las Palmas de Gran Canaria",
+    "Pais": "ES"
+  },
+  "Receptor": {
+    "Nif": "12345678Z",
+    "Nombre": "Cliente Ejemplo S.A.",
+    "Direccion": "Av. Principal 1",
+    "Provincia": "Madrid",
+    "Municipio": "Madrid",
+    "Pais": "ES"
+  },
+  "Lineas": [
+    {
+      "Descripcion": "Servicio de desarrollo web",
+      "Cantidad": 10,
+      "PrecioUnitario": 60.0,
+      "TipoImpositivo": 21.0
+    }
+  ],
+  "Totales": {
+    "BaseImponible": 600.0,
+    "CuotaImpuestos": 126.0,
+    "ImporteTotal": 726.0
+  },
+  "Moneda": "EUR",
+  "Observaciones": "Gracias por su confianza."
+}

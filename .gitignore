@@ -1,0 +1,36 @@
+# Archivos generados por Visual Studio
+.vs/
+# Archivos de compilación
+bin/
+obj/
+# Archivos de usuario de Visual Studio
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+# Archivos de configuración de Rider
+.idea/
+*.sln.iml
+# Archivos de paquetes NuGet
+*.nupkg
+# Archivos de configuración de paquetes
+project.lock.json
+project.fragment.lock.json
+artifacts/
+# Archivos de configuración de Azure
+*.azure*
+# Archivos de logs
+*.log
+# Archivos de configuración de entorno
+.env
+# Archivos de test result
+TestResults/
+# Archivos de configuración de VS Code
+.vscode/
+
+# Archivos generados por macOS
+.DS_Store
+
+# Uploads
+src/ScrapperNovanet.API/uploads
+src/ScrapperNovanet.Worker/uploads
