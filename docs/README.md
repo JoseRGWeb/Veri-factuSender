@@ -14,9 +14,10 @@ Bienvenido a la documentación completa del proyecto **VerifactuSender**, una so
 ### 🔧 Documentación Técnica
 
 5. **[Guía Técnica de Integración VERI\*FACTU](Verifactu-Guia-Tecnica.md)** - Referencia completa de integración con los servicios de la AEAT
-6. **[Protocolos de Comunicación con AEAT](protocolos-comunicacion.md)** - 🆕 Detalles de TLS, autenticación, formatos de mensajes y control de errores
+6. **[Protocolos de Comunicación con AEAT](protocolos-comunicacion.md)** - Detalles de TLS, autenticación, formatos de mensajes y control de errores
 7. **[Entorno de Pruebas (Sandbox AEAT)](entorno-pruebas.md)** - Configuración del entorno sandbox para pruebas contra el portal de la AEAT
-8. **[Hoja de Ruta (Roadmap)](roadmap.md)** - Próximos pasos y mejoras planificadas
+8. **[Pruebas Funcionales End-to-End](pruebas-end-to-end.md)** - 🆕 Guía paso a paso para ejecutar pruebas de funcionamiento completas, incluyendo comandos, ejemplos y manejo de errores
+9. **[Hoja de Ruta (Roadmap)](roadmap.md)** - Próximos pasos y mejoras planificadas
 
 ### 🔗 Enlaces a Documentación Oficial de la AEAT
 
@@ -50,6 +51,7 @@ La documentación está organizada para facilitar diferentes niveles de conocimi
 
 - **Usuarios nuevos**: Comenzar por [Instalación](instalacion.md) → [Guía de Uso](uso.md)
 - **Configurar entorno de pruebas**: Ver [Entorno de Pruebas (Sandbox)](entorno-pruebas.md)
+- **Ejecutar pruebas funcionales**: Seguir [Pruebas End-to-End](pruebas-end-to-end.md)
 - **Desarrolladores**: Ver [Arquitectura](arquitectura.md) → [Desarrollo](desarrollo.md)
 - **Integración técnica**: Consultar [Guía Técnica VERI\*FACTU](Verifactu-Guia-Tecnica.md)
 - **Planificación**: Revisar [Roadmap](roadmap.md)
