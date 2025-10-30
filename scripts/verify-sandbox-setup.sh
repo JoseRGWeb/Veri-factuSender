@@ -191,7 +191,7 @@ echo ""
 # 9. Verificar .gitignore para seguridad
 echo "9. Verificando configuración de seguridad..."
 if [ -f ".gitignore" ]; then
-    if grep -q "*.pfx" .gitignore && grep -q "*.p12" .gitignore; then
+    if grep -q '\*.pfx' .gitignore && grep -q '\*.p12' .gitignore; then
         print_check "PASS" ".gitignore protege archivos de certificados"
     else
         print_check "WARN" ".gitignore no incluye protección para *.pfx y *.p12"
