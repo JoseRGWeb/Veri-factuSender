@@ -18,7 +18,8 @@ Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/
 - **[Guía de Instalación](docs/instalacion.md)** - Configuración paso a paso del proyecto
 - **[Guía de Uso](docs/uso.md)** - Ejemplos prácticos y casos de uso
 - **[Entorno de Pruebas (Sandbox)](docs/entorno-pruebas.md)** - Configuración del sandbox AEAT para pruebas
-- **[Protocolos de Comunicación](docs/protocolos-comunicacion.md)** - 🆕 Detalles de TLS, autenticación mutua, SOAP y control de errores
+- **[Pruebas End-to-End](docs/pruebas-end-to-end.md)** - 🆕 Guía paso a paso para pruebas funcionales completas
+- **[Protocolos de Comunicación](docs/protocolos-comunicacion.md)** - Detalles de TLS, autenticación mutua, SOAP y control de errores
 - **[Arquitectura](docs/arquitectura.md)** - Estructura y componentes del sistema
 - **[Guía de Desarrollo](docs/desarrollo.md)** - Para contribuidores y desarrolladores
 - **[Guía Técnica VERI\*FACTU](docs/Verifactu-Guia-Tecnica.md)** - Integración con servicios AEAT
@@ -28,9 +29,10 @@ Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/
 
 1. **Nuevos usuarios**: Comienza con la [Guía de Instalación](docs/instalacion.md)
 2. **Configurar entorno de pruebas**: Sigue la [Guía de Sandbox AEAT](docs/entorno-pruebas.md)
-3. **Ver ejemplos**: Consulta la [Guía de Uso](docs/uso.md)
-4. **Entender el código**: Lee la [Arquitectura](docs/arquitectura.md)
-5. **Contribuir**: Revisa la [Guía de Desarrollo](docs/desarrollo.md)
+3. **Ejecutar pruebas funcionales**: Usa la [Guía de Pruebas End-to-End](docs/pruebas-end-to-end.md)
+4. **Ver ejemplos**: Consulta la [Guía de Uso](docs/uso.md)
+5. **Entender el código**: Lee la [Arquitectura](docs/arquitectura.md)
+6. **Contribuir**: Revisa la [Guía de Desarrollo](docs/desarrollo.md)
 
 ## Estado
 
