@@ -1,0 +1,70 @@
+{
+  "Serie": "TEST",
+  "Numero": "SANDBOX-2025-0001",
+  "FechaExpedicion": "2025-10-30T10:00:00Z",
+  "Emisor": {
+    "Nif": "B12345678",
+    "Nombre": "EMPRESA PRUEBAS SANDBOX S.L.",
+    "Direccion": {
+      "Calle": "Calle de Pruebas",
+      "Numero": "123",
+      "CodigoPostal": "28001",
+      "Municipio": "Madrid",
+      "Provincia": "Madrid"
+    }
+  },
+  "Receptor": {
+    "Nif": "12345678A",
+    "Nombre": "CLIENTE PRUEBAS SANDBOX",
+    "Direccion": {
+      "Calle": "Avenida de Ejemplo",
+      "Numero": "456",
+      "CodigoPostal": "28002",
+      "Municipio": "Madrid",
+      "Provincia": "Madrid"
+    }
+  },
+  "Lineas": [
+    {
+      "NumeroLinea": 1,
+      "Descripcion": "Producto de prueba para sandbox AEAT",
+      "Cantidad": 1,
+      "UnidadMedida": "Unidad",
+      "PrecioUnitario": 100.00,
+      "TipoIva": 21,
+      "CuotaIva": 21.00,
+      "ImporteLinea": 100.00
+    },
+    {
+      "NumeroLinea": 2,
+      "Descripcion": "Servicio de consultoría de prueba",
+      "Cantidad": 2,
+      "UnidadMedida": "Horas",
+      "PrecioUnitario": 50.00,
+      "TipoIva": 21,
+      "CuotaIva": 21.00,
+      "ImporteLinea": 100.00
+    },
+    {
+      "NumeroLinea": 3,
+      "Descripcion": "Material de oficina",
+      "Cantidad": 5,
+      "UnidadMedida": "Unidad",
+      "PrecioUnitario": 10.00,
+      "TipoIva": 21,
+      "CuotaIva": 10.50,
+      "ImporteLinea": 50.00
+    }
+  ],
+  "TotalSinIva": 250.00,
+  "TotalIva": 52.50,
+  "TotalFactura": 302.50,
+  "FormaPago": "Transferencia bancaria",
+  "FechaPago": "2025-11-15",
+  "Observaciones": "Factura de prueba generada para el entorno sandbox de VERI*FACTU de la AEAT. Esta factura no tiene validez tributaria y es solo para propósitos de testing.",
+  "DatosAdicionales": {
+    "EntornoPruebas": true,
+    "Version": "1.0-sandbox",
+    "FechaGeneracion": "2025-10-30T13:47:00Z"
+  }
+}

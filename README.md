@@ -17,6 +17,7 @@ Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/
 - **[Índice de Documentación](docs/README.md)** - Punto de entrada a toda la documentación
 - **[Guía de Instalación](docs/instalacion.md)** - Configuración paso a paso del proyecto
 - **[Guía de Uso](docs/uso.md)** - Ejemplos prácticos y casos de uso
+- **[Entorno de Pruebas (Sandbox)](docs/entorno-pruebas.md)** - Configuración del sandbox AEAT para pruebas
 - **[Arquitectura](docs/arquitectura.md)** - Estructura y componentes del sistema
 - **[Guía de Desarrollo](docs/desarrollo.md)** - Para contribuidores y desarrolladores
 - **[Guía Técnica VERI\*FACTU](docs/Verifactu-Guia-Tecnica.md)** - Integración con servicios AEAT
@@ -25,9 +26,10 @@ Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/
 ### 🚀 Inicio Rápido
 
 1. **Nuevos usuarios**: Comienza con la [Guía de Instalación](docs/instalacion.md)
-2. **Ver ejemplos**: Consulta la [Guía de Uso](docs/uso.md)
-3. **Entender el código**: Lee la [Arquitectura](docs/arquitectura.md)
-4. **Contribuir**: Revisa la [Guía de Desarrollo](docs/desarrollo.md)
+2. **Configurar entorno de pruebas**: Sigue la [Guía de Sandbox AEAT](docs/entorno-pruebas.md)
+3. **Ver ejemplos**: Consulta la [Guía de Uso](docs/uso.md)
+4. **Entender el código**: Lee la [Arquitectura](docs/arquitectura.md)
+5. **Contribuir**: Revisa la [Guía de Desarrollo](docs/desarrollo.md)
 
 ## Estado
 

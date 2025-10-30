@@ -34,3 +34,35 @@ TestResults/
 # Uploads
 src/ScrapperNovanet.API/uploads
 src/ScrapperNovanet.Worker/uploads
+
+# Certificados y archivos sensibles - NUNCA VERSIONAR
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+
+# Configuración local con secretos
+appsettings.Local.json
+appsettings.*.local.json
+**/appsettings.Development.json
+secrets.json
+
+# Archivos de salida generados
+output/
+temp/
+tmp/
+*.xml.signed
+*.xml.unsigned
+
+# XSD descargados (pueden ser grandes)
+xsd/
+schemas/
+
+# User secrets
+**/secrets/
+
+# Archivos de prueba generados
+test-output/
+sandbox-output/
