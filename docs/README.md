@@ -16,8 +16,9 @@ Bienvenido a la documentación completa del proyecto **VerifactuSender**, una so
 5. **[Guía Técnica de Integración VERI\*FACTU](Verifactu-Guia-Tecnica.md)** - Referencia completa de integración con los servicios de la AEAT
 6. **[Protocolos de Comunicación con AEAT](protocolos-comunicacion.md)** - Detalles de TLS, autenticación, formatos de mensajes y control de errores
 7. **[Entorno de Pruebas (Sandbox AEAT)](entorno-pruebas.md)** - Configuración del entorno sandbox para pruebas contra el portal de la AEAT
-8. **[Pruebas Funcionales End-to-End](pruebas-end-to-end.md)** - 🆕 Guía paso a paso para ejecutar pruebas de funcionamiento completas, incluyendo comandos, ejemplos y manejo de errores
-9. **[Hoja de Ruta (Roadmap)](roadmap.md)** - Próximos pasos y mejoras planificadas
+8. **[Pruebas Funcionales End-to-End](pruebas-end-to-end.md)** - Guía paso a paso para ejecutar pruebas de funcionamiento completas, incluyendo comandos, ejemplos y manejo de errores
+9. **[Checklist de Paso a Producción](paso-a-produccion.md)** - 🆕 Guía completa para migrar de pruebas a producción: endpoints, certificados, configuración y validaciones
+10. **[Hoja de Ruta (Roadmap)](roadmap.md)** - Próximos pasos y mejoras planificadas
 
 ### 🔗 Enlaces a Documentación Oficial de la AEAT
 

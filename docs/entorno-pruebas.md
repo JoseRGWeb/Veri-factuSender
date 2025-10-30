@@ -826,6 +826,18 @@ openssl s_client -connect prewww1.aeat.es:443 \
 
 ### Checklist de Paso a Producción
 
+**Para una guía completa y detallada**, consulta el **[Checklist de Paso a Producción](paso-a-produccion.md)** que incluye:
+- Validaciones previas exhaustivas
+- Configuración técnica completa
+- Gestión de certificados de producción
+- Cambio de endpoints
+- Configuración de seguridad
+- Monitorización y logging
+- Plan de contingencia y rollback
+- Procedimiento de migración paso a paso
+
+**Checklist resumido**:
+
 - [ ] Todas las pruebas pasadas en sandbox
 - [ ] Validación XML contra XSD oficial
 - [ ] Certificado de producción obtenido y validado
@@ -838,6 +850,8 @@ openssl s_client -connect prewww1.aeat.es:443 \
 - [ ] Plan de rollback definido
 - [ ] Equipo entrenado en operación
 - [ ] Contactos de soporte AEAT identificados
+
+👉 **[Ver checklist completo de paso a producción](paso-a-produccion.md)**
 
 ---
 
