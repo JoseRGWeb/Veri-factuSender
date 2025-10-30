@@ -168,3 +168,26 @@ Punto de entrada en sede (índice técnico). Contiene reglas, códigos y descrip
 - **S16.** Sede AEAT — “Características del QR y servicio de cotejo”.
 - **S17.** Sede AEAT — “FAQ: Sistemas VERI*FACTU” (cotejo por QR).
 - **S18.** Sede AEAT — “Cuestiones generales” (QR y leyendas).
+
+---
+
+## Enlaces Directos a Documentación Oficial
+
+Para facilitar el acceso, aquí se proporcionan enlaces directos a los recursos más importantes de la AEAT:
+
+### Documentación Esencial
+- [Sede electrónica VERI*FACTU](https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu.html)
+- [Información técnica completa](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/informacion-tecnica.html)
+- [Portal de Pruebas Externas](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/portal-pruebas-externas.html)
+
+### Archivos Técnicos
+- [WSDL de servicios web](https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/SistemaFacturacion.wsdl)
+- [Esquemas XSD](https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/)
+
+### Normativa
+- [Real Decreto 1007/2023 - Reglamento SIF](https://www.boe.es/buscar/act.php?id=BOE-A-2023-24873)
+- [Preguntas frecuentes](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/preguntas-frecuentes.html)
+
+**Nota**: Los enlaces pueden cambiar. Verificar siempre desde la [sede electrónica oficial](https://sede.agenciatributaria.gob.es).
+
+**Última actualización de enlaces**: 30 de octubre de 2025
