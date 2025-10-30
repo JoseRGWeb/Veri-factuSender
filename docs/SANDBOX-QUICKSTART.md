@@ -4,6 +4,13 @@ Esta es una guía de referencia rápida para configurar el entorno de pruebas. P
 
 ## ⚡ Setup Rápido (5 minutos)
 
+### 0. Verificar Configuración (Opcional)
+
+```bash
+# Ejecutar script de verificación
+./scripts/verify-sandbox-setup.sh
+```
+
 ### 1. Prerequisitos
 - ✅ .NET 9 SDK instalado
 - ✅ Certificado digital válido en formato PFX
