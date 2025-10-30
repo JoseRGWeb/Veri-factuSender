@@ -18,6 +18,7 @@ Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/
 - **[Guía de Instalación](docs/instalacion.md)** - Configuración paso a paso del proyecto
 - **[Guía de Uso](docs/uso.md)** - Ejemplos prácticos y casos de uso
 - **[Entorno de Pruebas (Sandbox)](docs/entorno-pruebas.md)** - Configuración del sandbox AEAT para pruebas
+- **[Protocolos de Comunicación](docs/protocolos-comunicacion.md)** - 🆕 Detalles de TLS, autenticación mutua, SOAP y control de errores
 - **[Arquitectura](docs/arquitectura.md)** - Estructura y componentes del sistema
 - **[Guía de Desarrollo](docs/desarrollo.md)** - Para contribuidores y desarrolladores
 - **[Guía Técnica VERI\*FACTU](docs/Verifactu-Guia-Tecnica.md)** - Integración con servicios AEAT
