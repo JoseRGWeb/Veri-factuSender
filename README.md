@@ -8,7 +8,26 @@ VerifactuSender es una plantilla/prototipo en .NET 9 para construir, firmar y en
 -   Aplicación de consola `Verifactu.ConsoleDemo` que muestra un flujo de ejemplo: leer JSON de factura, construir un registro, calcular huella, serializar, firmar y enviar por SOAP (placeholder).
 -   Tests unitarios mínimos (ej.: `HashServiceTests`) como punto de partida.
 
-IMPORTANTE: el proyecto contiene implementaciones "placeholder" para la serialización XML, el algoritmo de huella y el endpoint SOAP. Antes de usarlo en producción debes ajustar la estructura al XSD/WSDL oficiales de la AEAT y verificar las políticas de firma y comunicación.
+⚠️ **IMPORTANTE**: El proyecto contiene implementaciones "placeholder" para la serialización XML, el algoritmo de huella y el endpoint SOAP. Antes de usarlo en producción debes ajustar la estructura al XSD/WSDL oficiales de la AEAT y verificar las políticas de firma y comunicación.
+
+## 📚 Documentación Completa
+
+Este proyecto incluye documentación exhaustiva en el directorio [`docs/`](docs/):
+
+- **[Índice de Documentación](docs/README.md)** - Punto de entrada a toda la documentación
+- **[Guía de Instalación](docs/instalacion.md)** - Configuración paso a paso del proyecto
+- **[Guía de Uso](docs/uso.md)** - Ejemplos prácticos y casos de uso
+- **[Arquitectura](docs/arquitectura.md)** - Estructura y componentes del sistema
+- **[Guía de Desarrollo](docs/desarrollo.md)** - Para contribuidores y desarrolladores
+- **[Guía Técnica VERI\*FACTU](docs/Verifactu-Guia-Tecnica.md)** - Integración con servicios AEAT
+- **[Roadmap](docs/roadmap.md)** - Próximos pasos y mejoras planificadas
+
+### 🚀 Inicio Rápido
+
+1. **Nuevos usuarios**: Comienza con la [Guía de Instalación](docs/instalacion.md)
+2. **Ver ejemplos**: Consulta la [Guía de Uso](docs/uso.md)
+3. **Entender el código**: Lee la [Arquitectura](docs/arquitectura.md)
+4. **Contribuir**: Revisa la [Guía de Desarrollo](docs/desarrollo.md)
 
 ## Estado
 
@@ -79,11 +98,20 @@ La consola hace lo siguiente (flujo de ejemplo):
 
 ## Qué hay que adaptar antes de producción
 
--   Serialización a XML: `VerifactuSerializer` actualmente genera un XML placeholder. Reemplaza por una serialización que cumpla exactamente los XSD exigidos por AEAT.
--   Algoritmo de huella: `HashService` emplea un ejemplo con SHA-256. Sustituye por la lógica oficial y las reglas de encadenado.
--   Firma XML: revisa parámetros de canonicalización (C14N), transformaciones y políticas indicadas por AEAT.
--   SOAP/WSDL: `VerifactuSoapClient` necesita la URL/WSDL reales, nombres de operaciones, y la correcta cabecera/soapAction.
--   Manejo de errores y reintentos: implementa políticas de reintento, logging y persistencia de huellas/registros según tus requisitos.
+-   **Serialización a XML**: `VerifactuSerializer` actualmente genera un XML placeholder. Reemplaza por una serialización que cumpla exactamente los XSD exigidos por AEAT.
+-   **Algoritmo de huella**: `HashService` emplea un ejemplo con SHA-256. Sustituye por la lógica oficial y las reglas de encadenado.
+-   **Firma XML**: Revisa parámetros de canonicalización (C14N), transformaciones y políticas indicadas por AEAT.
+-   **SOAP/WSDL**: `VerifactuSoapClient` necesita la URL/WSDL reales, nombres de operaciones, y la correcta cabecera/soapAction.
+-   **Manejo de errores y reintentos**: Implementa políticas de reintento, logging y persistencia de huellas/registros según tus requisitos.
+
+Para más detalles sobre las mejoras necesarias, consulta el [Roadmap completo](docs/roadmap.md).
+
+## 🔗 Enlaces a Documentación Oficial AEAT
+
+- [Sede electrónica VERI\*FACTU](https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu.html)
+- [Información técnica](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/informacion-tecnica.html)
+- [Portal de Pruebas Externas](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/portal-pruebas-externas.html)
+- [Documentación técnica detallada](docs/Verifactu-Guia-Tecnica.md) - Incluye enlaces a WSDL, XSD y especificaciones
 
 ## Tests
 
@@ -104,9 +132,15 @@ dotnet test
 
 ## Contribuir
 
-1. Haz fork y abre un PR.
-2. Acompaña cambios con tests y documentación clara.
-3. No incluyas claves, PFX o contraseñas en el repositorio.
+Para contribuir al proyecto:
+
+1. Lee la [Guía de Desarrollo](docs/desarrollo.md) para entender el proceso
+2. Haz fork del repositorio
+3. Crea una rama para tu funcionalidad
+4. Acompaña cambios con tests y documentación clara
+5. Abre un Pull Request
+
+⚠️ **Importante**: No incluyas claves, certificados PFX o contraseñas en el repositorio.
 
 ## Licencia
 
@@ -114,9 +148,10 @@ Este repositorio incluye un fichero `LICENSE` en la raíz. Revisa la licencia pa
 
 ---
 
-Si quieres, puedo además:
+## 📖 Recursos Adicionales
 
--   Ejecutar una compilación y correr los tests en este entorno y reportar resultados.
--   Generar plantillas de `XSD`/`WSDL` mocks o tests de integración que validen la serialización XML.
+- **[Documentación completa del proyecto](docs/)** - Toda la documentación en un solo lugar
+- **[Preguntas frecuentes AEAT](https://sede.agenciatributaria.gob.es/Sede/iva/verifactu/preguntas-frecuentes.html)** - FAQs oficiales
+- **[Real Decreto 1007/2023](https://www.boe.es/buscar/act.php?id=BOE-A-2023-24873)** - Normativa sobre SIF
 
-Indica si quieres que ejecute la compilación y los tests ahora (haré `dotnet build` y `dotnet test` y te muestro la salida resumida).
+Para consultas técnicas o reportar problemas, usa [GitHub Issues](https://github.com/JoseRGWeb/Veri-factuSender/issues).
