@@ -110,8 +110,6 @@ public class ReintentosService : IReintentosService
                     return resultado;
                 }
 
-                // Errores recuperables - preparar para reintento (código eliminado, se mueve abajo)
-
                 // Errores recuperables - preparar para reintento
                 _logger?.LogWarning(
                     "Errores recuperables detectados en intento {Intento}. Se reintentará.",
