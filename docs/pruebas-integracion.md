@@ -487,7 +487,7 @@ Editar `factura-sandbox-ejemplo.json` para actualizar facturas de prueba:
    public async Task NuevoTest_Descripcion_DebeValidarAlgo()
    {
        // Arrange
-       Skip.If(_skipTests, "Test omitido: No hay certificado configurado");
+       if (_skipTests) { return; } // Test omitido: No hay certificado configurado
        
        // Act
        // ... código del test
@@ -498,7 +498,7 @@ Editar `factura-sandbox-ejemplo.json` para actualizar facturas de prueba:
    ```
 
 2. **Seguir patrones existentes**:
-   - Usar `Skip.If` para omitir sin certificado
+   - Usar early return `if (_skipTests) { return; }` para omitir sin certificado
    - Generar números de factura únicos con timestamp
    - Actualizar `_ultimaHuella` si el test es exitoso
    - Añadir logs con `System.Diagnostics.Debug.WriteLine`

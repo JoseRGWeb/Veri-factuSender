@@ -16,10 +16,17 @@ namespace Verifactu.Integration.Tests;
 /// <summary>
 /// Tests de integración contra el Portal de Pruebas Externas de AEAT (Sandbox).
 /// 
+/// SERVICIOS BAJO TEST:
+/// - HashService: Cálculo de huella SHA-256 y encadenamiento
+/// - VerifactuSerializer: Generación de XML conforme a XSD oficial
+/// - XmlSignerService: Firma electrónica XMLDSig
+/// - VerifactuSoapClient: Comunicación SOAP con AEAT (mTLS)
+/// - CertificateLoader: Carga de certificados digitales PFX
+/// 
 /// IMPORTANTE: Estos tests requieren:
 /// - Certificado digital válido configurado en appsettings.Sandbox.json o user-secrets
 /// - Acceso a Internet al endpoint de sandbox de AEAT
-/// - Los tests se saltan automáticamente si no hay certificado configurado
+/// - Los tests se omiten automáticamente si no hay certificado configurado
 /// 
 /// CONFIGURACIÓN:
 /// 1. Copiar appsettings.Sandbox.json y configurar rutas de certificado
