@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Verifactu.Client.Services;
@@ -43,45 +46,99 @@ public class CertificateLoader : ICertificateLoader
     /// <param name="password">Contraseña del archivo PFX</param>
     /// <returns>Certificado X.509 con clave privada incluida</returns>
     /// <remarks>
-    /// IMPORTANTE: Este método utiliza el constructor obsoleto de X509Certificate2.
-    /// En .NET 9 se recomienda usar X509CertificateLoader.LoadPkcs12() en su lugar.
+    /// MIGRACIÓN A .NET 9:
+    /// Este método ha sido actualizado para usar X509CertificateLoader.LoadPkcs12() 
+    /// en lugar del constructor obsoleto de X509Certificate2.
     /// 
     /// X509KeyStorageFlags utilizados:
     /// - MachineKeySet: Almacena la clave en el almacén de la máquina (no del usuario)
     /// - Exportable: Permite exportar la clave privada posteriormente
     /// - PersistKeySet: Persiste la clave en el almacén del sistema
     /// 
-    /// VALIDACIONES RECOMENDADAS ANTES DE USAR EL CERTIFICADO:
-    /// 1. Verificar que HasPrivateKey == true
-    /// 2. Verificar fechas de validez (NotBefore y NotAfter)
-    /// 3. Verificar cadena de confianza con X509Chain
-    /// 4. Verificar que tiene propósito Client Authentication
-    /// 5. Verificar que no está revocado (CRL/OCSP)
+    /// VALIDACIONES REALIZADAS:
+    /// 1. Verificación que HasPrivateKey == true
+    /// 2. Verificación de fechas de validez (NotBefore y NotAfter)
+    /// 3. Verificación básica de cadena de confianza con X509Chain
     /// 
-    /// ALTERNATIVA RECOMENDADA (.NET 9+):
-    /// <code>
-    /// byte[] pfxBytes = File.ReadAllBytes(rutaPfx);
-    /// return X509CertificateLoader.LoadPkcs12(
-    ///     pfxBytes, 
-    ///     password,
-    ///     X509KeyStorageFlags.MachineKeySet | 
-    ///     X509KeyStorageFlags.Exportable |
-    ///     X509KeyStorageFlags.PersistKeySet
-    /// );
-    /// </code>
+    /// VALIDACIONES ADICIONALES RECOMENDADAS EN PRODUCCIÓN:
+    /// 1. Verificar que tiene propósito Client Authentication (EKU 1.3.6.1.5.5.7.3.2)
+    /// 2. Verificar que no está revocado mediante CRL/OCSP
+    /// 3. Validar que el NIF del certificado coincide con el NIF del emisor
     /// </remarks>
+    /// <exception cref="System.IO.FileNotFoundException">
+    /// Si el archivo PFX no existe en la ruta especificada
+    /// </exception>
     /// <exception cref="System.Security.Cryptography.CryptographicException">
-    /// Si el archivo PFX no existe, la contraseña es incorrecta, o el formato es inválido
+    /// Si la contraseña es incorrecta, el formato es inválido, o el certificado no cumple los requisitos
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Si el certificado no contiene clave privada, está caducado o no es válido
     /// </exception>
     public X509Certificate2 CargarDesdePfx(string rutaPfx, string password)
     {
-        // NOTA: Constructor obsoleto en .NET 9 (SYSLIB0057)
-        // Se mantiene temporalmente para compatibilidad
-        // TODO: Migrar a X509CertificateLoader.LoadPkcs12() según recomendación de .NET 9
-        return new X509Certificate2(
-            rutaPfx, password,
+        // Verificar que el archivo existe
+        if (!File.Exists(rutaPfx))
+        {
+            throw new FileNotFoundException($"No se encontró el archivo de certificado en la ruta especificada: {rutaPfx}");
+        }
+
+        // Cargar certificado usando la nueva API de .NET 9
+        byte[] pfxBytes = File.ReadAllBytes(rutaPfx);
+        var certificado = X509CertificateLoader.LoadPkcs12(
+            pfxBytes,
+            password,
             X509KeyStorageFlags.MachineKeySet |
             X509KeyStorageFlags.Exportable |
             X509KeyStorageFlags.PersistKeySet);
+
+        // Validación 1: Verificar que tiene clave privada
+        if (!certificado.HasPrivateKey)
+        {
+            certificado.Dispose();
+            throw new InvalidOperationException(
+                "El certificado no contiene clave privada. " +
+                "VERI*FACTU requiere certificados con clave privada para firma digital y autenticación mTLS.");
+        }
+
+        // Validación 2: Verificar fechas de validez
+        var ahora = DateTime.Now;
+        if (ahora < certificado.NotBefore)
+        {
+            certificado.Dispose();
+            throw new InvalidOperationException(
+                $"El certificado aún no es válido. Será válido desde: {certificado.NotBefore:yyyy-MM-dd HH:mm:ss}");
+        }
+
+        if (ahora > certificado.NotAfter)
+        {
+            certificado.Dispose();
+            throw new InvalidOperationException(
+                $"El certificado ha caducado. Caducó el: {certificado.NotAfter:yyyy-MM-dd HH:mm:ss}");
+        }
+
+        // Validación 3: Verificar cadena de confianza (advertencia si no es confiable)
+        using (var chain = new X509Chain())
+        {
+            // Configurar opciones de validación
+            chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck; // No verificar revocación aquí
+            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.IgnoreNotTimeValid;
+
+            bool chainIsValid = chain.Build(certificado);
+            
+            if (!chainIsValid)
+            {
+                // En sandbox/desarrollo es aceptable tener certificados autofirmados
+                // En producción se debe revisar esto más estrictamente
+                var chainErrors = string.Join(", ", 
+                    chain.ChainStatus.Select(status => status.StatusInformation));
+                
+                // Log de advertencia pero no lanzar excepción
+                System.Diagnostics.Debug.WriteLine(
+                    $"ADVERTENCIA: La cadena de confianza del certificado tiene problemas: {chainErrors}. " +
+                    "Esto es aceptable en entorno sandbox/pruebas, pero debe corregirse en producción.");
+            }
+        }
+
+        return certificado;
     }
 }
