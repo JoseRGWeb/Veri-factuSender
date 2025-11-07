@@ -1,0 +1,38 @@
+{
+  "Serie": "TEST",
+  "Numero": "SANDBOX-0001",
+  "FechaEmision": "2025-11-07T10:00:00Z",
+  "TipoFactura": "F1",
+  "DescripcionOperacion": "Venta de productos - Test de integración",
+  "Emisor": {
+    "Nif": "B12345678",
+    "Nombre": "EMPRESA PRUEBAS SANDBOX SL"
+  },
+  "Receptor": {
+    "Nif": "12345678A",
+    "Nombre": "CLIENTE PRUEBAS SANDBOX"
+  },
+  "Lineas": [
+    {
+      "Descripcion": "Producto de prueba A",
+      "Cantidad": 2,
+      "PrecioUnitario": 50.00,
+      "TipoIva": 21,
+      "ImporteLinea": 100.00
+    },
+    {
+      "Descripcion": "Servicio de prueba B",
+      "Cantidad": 1,
+      "PrecioUnitario": 100.00,
+      "TipoIva": 21,
+      "ImporteLinea": 100.00
+    }
+  ],
+  "Totales": {
+    "BaseImponible": 200.00,
+    "TotalIva": 42.00,
+    "Total": 242.00
+  },
+  "FormaPago": "Transferencia",
+  "Observaciones": "Factura de prueba para entorno sandbox AEAT - Integración automática"
+}
