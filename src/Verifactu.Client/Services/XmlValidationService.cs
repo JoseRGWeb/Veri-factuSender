@@ -13,15 +13,43 @@ public class XmlValidationService : IXmlValidationService
     private XmlSchemaSet? _schemas;
     private bool _isValid;
     private readonly List<string> _validationErrors;
+    private readonly List<string> _validationWarnings;
 
     public XmlValidationService(string? xsdBasePath = null)
     {
-        // Por defecto busca XSD en docs/xsd/ relativo al proyecto
-        _xsdBasePath = xsdBasePath ?? Path.Combine(
-            Directory.GetCurrentDirectory(), 
-            "..", "..", "..", "..", "docs", "xsd"
-        );
+        // Por defecto busca XSD en docs/xsd/ relativo a la solución
+        _xsdBasePath = xsdBasePath ?? BuscarDirectorioXsd();
         _validationErrors = new List<string>();
+        _validationWarnings = new List<string>();
+    }
+
+    /// <summary>
+    /// Busca el directorio de XSD comenzando desde el directorio actual y subiendo hasta encontrar la solución
+    /// </summary>
+    private static string BuscarDirectorioXsd()
+    {
+        var currentDir = Directory.GetCurrentDirectory();
+        var dirInfo = new DirectoryInfo(currentDir);
+        
+        // Buscar hacia arriba hasta encontrar el archivo .sln o llegar a la raíz
+        while (dirInfo != null)
+        {
+            // Buscar archivo .sln en el directorio actual
+            if (dirInfo.GetFiles("*.sln").Length > 0)
+            {
+                // Encontramos la raíz de la solución
+                var xsdPath = Path.Combine(dirInfo.FullName, "docs", "xsd");
+                if (Directory.Exists(xsdPath))
+                {
+                    return xsdPath;
+                }
+            }
+            
+            dirInfo = dirInfo.Parent;
+        }
+        
+        // Si no se encuentra, usar ruta por defecto relativa
+        return Path.Combine(currentDir, "docs", "xsd");
     }
 
     /// <summary>
@@ -39,18 +67,19 @@ public class XmlValidationService : IXmlValidationService
                 _schemas = CargarEsquemasXsd();
             }
 
-            // Si no hay esquemas disponibles, reportar warning pero no fallar
+            // Si no hay esquemas disponibles, registrar advertencia pero no fallar
             if (_schemas == null || _schemas.Count == 0)
             {
-                Console.WriteLine("ADVERTENCIA: No se encontraron esquemas XSD para validación.");
-                Console.WriteLine($"Buscar XSD en: {_xsdBasePath}");
-                Console.WriteLine("Los archivos XSD deben descargarse manualmente desde AEAT.");
-                Console.WriteLine("Ver docs/xsd/README.md para instrucciones.");
+                _validationWarnings.Add("No se encontraron esquemas XSD para validación.");
+                _validationWarnings.Add($"Ruta de búsqueda: {_xsdBasePath}");
+                _validationWarnings.Add("Los archivos XSD deben descargarse manualmente desde AEAT.");
+                _validationWarnings.Add("Ver docs/xsd/README.md para instrucciones.");
                 return true; // No fallar si no hay XSD disponibles
             }
 
             _isValid = true;
             _validationErrors.Clear();
+            _validationWarnings.Clear();
 
             // Configurar validación
             xmlDoc.Schemas = _schemas;
@@ -63,10 +92,9 @@ public class XmlValidationService : IXmlValidationService
         catch (Exception ex)
         {
             _validationErrors.Add($"Error durante validación: {ex.Message}");
-            // Solo invocar el handler si existe, no crear ValidationEventArgs manualmente
             if (validationEventHandler != null)
             {
-                Console.WriteLine($"Error de validación: {ex.Message}");
+                _validationErrors.Add($"Excepción: {ex.GetType().Name}");
             }
             return false;
         }
@@ -84,7 +112,7 @@ public class XmlValidationService : IXmlValidationService
         }
         else if (e.Severity == XmlSeverityType.Warning)
         {
-            _validationErrors.Add($"WARNING: {e.Message}");
+            _validationWarnings.Add($"WARNING: {e.Message}");
         }
     }
 
@@ -95,7 +123,7 @@ public class XmlValidationService : IXmlValidationService
     {
         if (!Directory.Exists(_xsdBasePath))
         {
-            Console.WriteLine($"Directorio XSD no encontrado: {_xsdBasePath}");
+            _validationWarnings.Add($"Directorio XSD no encontrado: {_xsdBasePath}");
             return null;
         }
 
@@ -104,7 +132,7 @@ public class XmlValidationService : IXmlValidationService
 
         if (xsdFiles.Length == 0)
         {
-            Console.WriteLine($"No se encontraron archivos XSD en: {_xsdBasePath}");
+            _validationWarnings.Add($"No se encontraron archivos XSD en: {_xsdBasePath}");
             return null;
         }
 
@@ -116,18 +144,18 @@ public class XmlValidationService : IXmlValidationService
                 using var reader = XmlReader.Create(xsdFile);
                 var schema = XmlSchema.Read(reader, (sender, e) =>
                 {
-                    Console.WriteLine($"Error al leer XSD {Path.GetFileName(xsdFile)}: {e.Message}");
+                    _validationWarnings.Add($"Error al leer XSD {Path.GetFileName(xsdFile)}: {e.Message}");
                 });
 
                 if (schema != null && !string.IsNullOrEmpty(schema.TargetNamespace))
                 {
                     schemas.Add(schema);
-                    Console.WriteLine($"XSD cargado: {Path.GetFileName(xsdFile)} (namespace: {schema.TargetNamespace})");
+                    // XSD cargado correctamente - solo registramos en debug
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al cargar XSD {Path.GetFileName(xsdFile)}: {ex.Message}");
+                _validationWarnings.Add($"Error al cargar XSD {Path.GetFileName(xsdFile)}: {ex.Message}");
             }
         }
 
@@ -139,4 +167,9 @@ public class XmlValidationService : IXmlValidationService
     /// Obtiene los errores de validación acumulados
     /// </summary>
     public IReadOnlyList<string> ObtenerErrores() => _validationErrors.AsReadOnly();
+    
+    /// <summary>
+    /// Obtiene las advertencias de validación acumuladas
+    /// </summary>
+    public IReadOnlyList<string> ObtenerAdvertencias() => _validationWarnings.AsReadOnly();
 }
