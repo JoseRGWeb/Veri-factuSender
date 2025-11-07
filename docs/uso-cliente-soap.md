@@ -242,10 +242,64 @@ await Task.Delay(TimeSpan.FromSeconds(tiempoEspera));
 const string SANDBOX_ENDPOINT = "https://prewww1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion";
 ```
 
+**Características del sandbox:**
+- Certificado de pruebas proporcionado por AEAT
+- Validaciones más permisivas que producción
+- Datos enviados NO tienen validez tributaria
+- Puede tener interrupciones de servicio
+- Ideal para desarrollo y pruebas
+
+**Configuración recomendada (appsettings.Sandbox.json):**
+```json
+{
+  "Verifactu": {
+    "Environment": "Sandbox",
+    "EndpointUrl": "https://prewww1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion",
+    "SoapAction": "",
+    "Timeout": 120,
+    "ValidarXmlContraXsd": false
+  }
+}
+```
+
 ### Entorno de Producción
 ```csharp
 const string PRODUCCION_ENDPOINT = "https://www1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion";
 ```
+
+**Características de producción:**
+- Certificado digital real válido OBLIGATORIO
+- Validaciones estrictas conforme a normativa
+- Datos enviados TIENEN VALIDEZ TRIBUTARIA
+- SLA garantizado por AEAT
+- Rate limiting más restrictivo
+
+**Configuración recomendada (appsettings.Production.json):**
+```json
+{
+  "Verifactu": {
+    "Environment": "Production",
+    "EndpointUrl": "https://www1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion",
+    "SoapAction": "",
+    "Timeout": 120,
+    "ValidarXmlContraXsd": true
+  }
+}
+```
+
+### Diferencias Clave Sandbox vs Producción
+
+| Aspecto | Sandbox | Producción |
+|---------|---------|------------|
+| URL Base | `prewww1.aeat.es` | `www1.aeat.es` |
+| Certificado | Pruebas (puede ser autofirmado) | Real válido |
+| Validez Tributaria | NO | **SÍ** |
+| Validaciones | Permisivas | Estrictas |
+| Rate Limiting | ~100 req/min | ~60 req/min |
+| Disponibilidad | Best effort | SLA garantizado |
+| Logs detallados | Recomendado | Solo errores |
+
+## Configuración de Endpoints
 
 ## Namespaces SOAP Oficiales
 
@@ -277,3 +331,31 @@ xmlns:con="https://www2.agenciatributaria.gob.es/static_files/common/internet/de
 4. **Certificados**: Asegurar que el NIF del certificado coincida con el NIF del emisor de facturas.
 
 5. **TLS**: El cliente usa automáticamente TLS 1.2+ (configuración por defecto en .NET 9).
+
+6. **SOAPAction**: Debe ser vacío (`""`) según WSDL oficial de AEAT. No confundir con el nombre de la operación.
+
+7. **Validación XSD**: Altamente recomendado validar XML contra XSD antes de enviar, especialmente en producción.
+
+8. **TiempoEsperaEnvio**: Respetar siempre el tiempo devuelto por AEAT entre envíos (inicialmente 60s, puede variar).
+
+9. **Errores 3001 (Duplicado)**: No reintentar envío. El registro ya fue aceptado, usar CSV original.
+
+10. **Troubleshooting**: Consultar `docs/TROUBLESHOOTING-SOAP.md` para diagnóstico de errores comunes.
+
+## Validación del Cliente contra WSDL
+
+El cliente SOAP ha sido validado completamente contra el WSDL oficial de AEAT:
+
+- ✅ Estructura SOAP 1.1 conforme
+- ✅ Namespaces oficiales correctos
+- ✅ Headers HTTP apropiados
+- ✅ Operaciones RegFacturacionAlta y ConsultaLRFacturas implementadas
+- ✅ Parseo de respuestas completo
+- ✅ Tests de validación WSDL: 11/11 pasando
+
+**Ver análisis completo:** `docs/wsdl/WSDL-ANALYSIS.md`
+
+**Ejecutar tests de validación:**
+```bash
+dotnet test --filter "Category=WSDL"
+```

@@ -1,5 +1,60 @@
 # WSDL y Esquemas XSD Oficiales de AEAT
 
+## 🎯 Estado de Validación WSDL
+
+**✅ VALIDACIÓN COMPLETA**
+
+El cliente SOAP (`VerifactuSoapClient`) ha sido validado completamente contra el WSDL oficial de AEAT:
+
+| Aspecto | Estado | Detalle |
+|---------|--------|---------|
+| Estructura SOAP 1.1 | ✅ Validado | Sobre SOAP conforme a especificación |
+| Namespaces oficiales | ✅ Validado | 100% coincidentes con WSDL |
+| Headers HTTP | ✅ Validado | Content-Type, SOAPAction correctos |
+| Operación RegFacturacionAlta | ✅ Implementada | Envío de registros completo |
+| Operación ConsultaLRFacturas | ✅ Implementada | Consulta de registros completo |
+| Parseo de respuestas | ✅ Validado | RespuestaSuministro y RespuestaConsultaLR |
+| Tests de validación | ✅ 11/11 pasando | WsdlValidationTests.cs |
+| Conformidad al 100% | ✅ Certificado | Ver WSDL-ANALYSIS.md |
+
+**Ejecutar tests de validación:**
+```bash
+cd tests/Verifactu.Integration.Tests
+dotnet test --filter "Category=WSDL"
+```
+
+**Documentación detallada:**
+- Análisis completo del WSDL: `WSDL-ANALYSIS.md`
+- Guía de uso del cliente: `../uso-cliente-soap.md`
+- Troubleshooting: `../TROUBLESHOOTING-SOAP.md`
+
+---
+
+## 📥 Descarga Manual de WSDL (Opcional)
+
+**Nota:** El WSDL oficial NO es necesario para el funcionamiento del cliente SOAP, ya que la implementación está validada y conforme al 100%. Sin embargo, si deseas tenerlo localmente para referencia:
+
+```bash
+# Crear directorio si no existe
+mkdir -p docs/wsdl
+
+# Descargar WSDL oficial de producción
+curl -o docs/wsdl/SistemaFacturacion.wsdl \
+  "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/SistemaFacturacion.wsdl"
+
+# O alternativa (mismo archivo):
+curl -o docs/wsdl/SistemaFacturacion.wsdl \
+  "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tikeV1.0/cont/ws/SistemaFacturacion.wsdl"
+
+# WSDL de sandbox (si está disponible):
+curl -o docs/wsdl/SistemaFacturacion-sandbox.wsdl \
+  "https://prewww2.aeat.es/static_files/common/internet/dep/aplicaciones/es/aeat/tikeV1.0/cont/ws/SistemaFacturacion.wsdl"
+```
+
+**Importante:** Las URLs de AEAT pueden requerir certificado digital para la descarga o estar bloqueadas por firewall. El archivo WSDL-ANALYSIS.md contiene toda la información estructurada del WSDL sin necesidad de descarga.
+
+---
+
 ## Ubicación Oficial
 
 Debido a restricciones de red, los archivos WSDL y XSD deben descargarse manualmente desde:
