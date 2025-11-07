@@ -13,6 +13,9 @@ namespace Verifactu.Client.Tests;
 /// </summary>
 public class XmlSerializationTests
 {
+    // Namespace oficial de AEAT para SuministroInformacion
+    private const string NsAeat = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+
     private RegistroFacturacion CrearRegistroEjemplo()
     {
         var factura = new Factura(
@@ -93,7 +96,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var expectedNamespace = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var expectedNamespace = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -110,7 +113,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -138,7 +141,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -164,7 +167,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -190,7 +193,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -212,7 +215,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -237,7 +240,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -280,5 +283,219 @@ public class XmlSerializationTests
 
         // Assert - No debe fallar si no hay XSD, solo advertir
         Assert.True(resultado);
+    }
+
+    [Theory]
+    [InlineData(TipoFactura.F1, "Factura completa")]
+    [InlineData(TipoFactura.F2, "Factura simplificada")]
+    [InlineData(TipoFactura.F3, "Factura sustitución")]
+    [InlineData(TipoFactura.F4, "Asiento resumen")]
+    [InlineData(TipoFactura.R1, "Rectificativa error fundado")]
+    [InlineData(TipoFactura.R2, "Rectificativa Art. 80.3")]
+    [InlineData(TipoFactura.R3, "Rectificativa Art. 80.4")]
+    [InlineData(TipoFactura.R4, "Rectificativa resto")]
+    [InlineData(TipoFactura.R5, "Rectificativa simplificada")]
+    public void CrearXmlRegistro_TodosTiposFactura_GeneranXmlValido(TipoFactura tipo, string descripcion)
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo() with { TipoFactura = tipo };
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var ns = NsAeat;
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        Assert.NotNull(xmlDoc);
+        Assert.NotNull(xmlDoc.DocumentElement);
+        
+        var tipoFacturaNode = xmlDoc.SelectSingleNode("//sum1:TipoFactura", nsmgr);
+        Assert.NotNull(tipoFacturaNode);
+        Assert.Equal(tipo.ToString(), tipoFacturaNode.InnerText);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_SinEncadenamiento_NoIncluyeElementoEncadenamiento()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo() with { HuellaAnterior = null };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var encadenamiento = xmlDoc.SelectSingleNode("//sum1:Encadenamiento", nsmgr);
+        Assert.Null(encadenamiento);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_ConMultipleDesgloses_GeneraTodosLosElementos()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var desglose = new List<DetalleDesglose>
+        {
+            new DetalleDesglose("01", "S1", 21, 100, 21),
+            new DetalleDesglose("01", "S1", 10, 50, 5),
+            new DetalleDesglose("01", "S1", 4, 25, 1)
+        };
+        var registro = CrearRegistroEjemplo() with 
+        { 
+            Desglose = desglose,
+            CuotaTotal = 27,
+            ImporteTotal = 202
+        };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var detalles = xmlDoc.SelectNodes("//sum1:Desglose/sum1:DetalleDesglose", nsmgr);
+        Assert.NotNull(detalles);
+        Assert.Equal(3, detalles.Count);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_FacturaSimplificadaSinDestinatario_NoIncluyeDestinatarios()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo() with 
+        { 
+            TipoFactura = TipoFactura.F2,
+            Destinatario = null 
+        };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var destinatarios = xmlDoc.SelectSingleNode("//sum1:Destinatarios", nsmgr);
+        Assert.Null(destinatarios);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_ConDestinatarioSinNIF_GeneraXmlValido()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var destinatarioSinNif = new Receptor(null, "CLIENTE EXTRANJERO");
+        var registro = CrearRegistroEjemplo() with { Destinatario = destinatarioSinNif };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var destinatarios = xmlDoc.SelectSingleNode("//sum1:Destinatarios", nsmgr);
+        Assert.NotNull(destinatarios);
+        
+        var nombreRazon = xmlDoc.SelectSingleNode("//sum1:Destinatarios/sum1:IDDestinatario/sum1:NombreRazon", nsmgr);
+        Assert.NotNull(nombreRazon);
+        Assert.Equal("CLIENTE EXTRANJERO", nombreRazon.InnerText);
+        
+        var nif = xmlDoc.SelectSingleNode("//sum1:Destinatarios/sum1:IDDestinatario/sum1:NIF", nsmgr);
+        Assert.Null(nif);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_ImportesDecimales_FormatoConDosDecimales()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo() with
+        {
+            CuotaTotal = 123.456m,  // Debe redondearse a 123.46
+            ImporteTotal = 654.321m  // Debe redondearse a 654.32
+        };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var cuotaTotal = xmlDoc.SelectSingleNode("//sum1:CuotaTotal", nsmgr);
+        var importeTotal = xmlDoc.SelectSingleNode("//sum1:ImporteTotal", nsmgr);
+        
+        Assert.NotNull(cuotaTotal);
+        Assert.NotNull(importeTotal);
+        
+        // Verificar formato con 2 decimales
+        Assert.Equal("123.46", cuotaTotal.InnerText);
+        Assert.Equal("654.32", importeTotal.InnerText);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_FechaHoraConZonaHoraria_FormatoISO8601()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var fechaHora = new DateTime(2024, 11, 7, 14, 30, 45, DateTimeKind.Local);
+        var registro = CrearRegistroEjemplo() with
+        {
+            FechaHoraHusoGenRegistro = fechaHora
+        };
+        var ns = NsAeat;
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("sum1", ns);
+
+        // Assert
+        var fechaHoraNode = xmlDoc.SelectSingleNode("//sum1:FechaHoraHusoGenRegistro", nsmgr);
+        Assert.NotNull(fechaHoraNode);
+        
+        // Debe incluir zona horaria (ej: 2024-11-07T14:30:45+01:00)
+        Assert.Matches(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$", fechaHoraNode.InnerText);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_ElementoRaiz_EsRegistroAlta()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo();
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+
+        // Assert
+        Assert.NotNull(xmlDoc.DocumentElement);
+        Assert.Equal("RegistroAlta", xmlDoc.DocumentElement.LocalName);
+    }
+
+    [Fact]
+    public void CrearXmlRegistro_DeclaracionNamespace_IncluePrefijo()
+    {
+        // Arrange
+        var serializer = new VerifactuSerializer();
+        var registro = CrearRegistroEjemplo();
+
+        // Act
+        var xmlDoc = serializer.CrearXmlRegistro(registro);
+
+        // Assert
+        Assert.NotNull(xmlDoc.DocumentElement);
+        var xmlns = xmlDoc.DocumentElement.GetAttribute("xmlns:sum1");
+        Assert.Equal(
+            NsAeat,
+            xmlns);
     }
 }

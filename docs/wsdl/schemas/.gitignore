@@ -1,0 +1,6 @@
+# Los archivos XSD oficiales deben descargarse manualmente
+# No se incluyen en el repositorio para evitar problemas de licencia/copyright
+# Ver README.md para instrucciones de descarga
+
+*.xsd
+*.wsdl

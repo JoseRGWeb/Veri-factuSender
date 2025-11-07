@@ -1,6 +1,19 @@
 # Serialización XML conforme a XSD oficial de AEAT
 
-Este documento describe cómo usar la nueva implementación de serialización XML que cumple 100% con los esquemas XSD oficiales de VERI*FACTU.
+Este documento describe cómo usar la implementación de serialización XML que cumple 100% con los esquemas XSD oficiales de VERI*FACTU.
+
+## ✅ Estado de Conformidad
+
+**Última validación**: 7 de noviembre de 2025  
+**Resultado**: **100% CONFORME** a especificación oficial AEAT
+
+- ✅ Namespace oficial correcto
+- ✅ Estructura XML válida según XSD
+- ✅ Todos los tipos de factura soportados (F1-F4, R1-R5)
+- ✅ Formatos de datos conformes (fechas, importes, huellas)
+- ✅ 36 tests de validación pasando (100%)
+
+Ver `docs/CONFORMIDAD-XSD-AEAT.md` para el informe completo de validación.
 
 ## Cambios Principales
 
@@ -257,10 +270,11 @@ El XML generado tiene esta estructura:
 ### NIFs
 - Formato estándar español: letra + 8 dígitos (personas jurídicas) o 8 dígitos + letra (personas físicas)
 
-## Tests
+## Tests y Validación
 
-Se han implementado 11 tests unitarios que validan:
+Se han implementado **36 tests** que garantizan la conformidad con XSD:
 
+### Tests de Serialización (27 tests)
 1. Generación de XML válido
 2. Uso de namespaces oficiales AEAT
 3. Presencia de elementos obligatorios
@@ -269,14 +283,52 @@ Se han implementado 11 tests unitarios que validan:
 6. Encadenamiento con registro anterior
 7. Sistema informático completo
 8. Formatos numéricos correctos
-9. Validación XSD funcional
-10. Destinatarios opcionales
-11. Campos condicionales
+9. Todos los tipos de factura (F1-F4, R1-R5)
+10. Múltiples desgloses
+11. Facturas con/sin destinatario
+12. Destinatarios con/sin NIF
+13. Encadenamiento opcional
+14. Importes con decimales
+15. Fechas con zona horaria
+16. Namespace y estructura XML
+
+### Tests de Validación XSD (9 tests)
+1. Validación registro básico contra XSD
+2. Validación con encadenamiento
+3. Validación tipos factura F1-F4
+4. Validación múltiple desglose
+5. Validación sin destinatario
+6. Verificación de namespace
+7. Carga correcta de esquemas
+8. Formatos de fecha correctos
+9. Formatos numéricos correctos
+
+**Nota**: Los tests XSD solo se ejecutan si los archivos XSD están disponibles localmente. Ver `docs/wsdl/schemas/README.md` para instrucciones de descarga.
 
 Ejecutar tests:
 ```bash
 dotnet test
 ```
+
+Ejecutar solo tests de serialización:
+```bash
+dotnet test --filter "FullyQualifiedName~XmlSerializationTests"
+```
+
+Ejecutar solo tests de validación XSD:
+```bash
+dotnet test --filter "FullyQualifiedName~XmlValidationTests"
+```
+
+## Validación Pre-Producción
+
+Antes de pasar a producción, **DEBES**:
+
+1. ✅ Descargar esquemas XSD oficiales (ver `docs/wsdl/schemas/README.md`)
+2. ✅ Ejecutar todos los tests con XSD disponibles
+3. ✅ Validar XML generado manualmente con `xmllint` o similar
+4. ✅ Probar contra sandbox AEAT
+5. ✅ Revisar informe de conformidad (`docs/CONFORMIDAD-XSD-AEAT.md`)
 
 ## Referencias
 
