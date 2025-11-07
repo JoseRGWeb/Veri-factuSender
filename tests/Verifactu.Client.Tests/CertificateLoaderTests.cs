@@ -27,7 +27,7 @@ public class CertificateLoaderTests : IDisposable
     /// Test 1: Verifica que se puede cargar un certificado PFX válido con clave privada.
     /// </summary>
     [Fact]
-    public void CargarDesdePfx_ConCertificadoValido_DebeCargaryTenerClavePrivada()
+    public void CargarDesdePfx_ConCertificadoValido_DebeCargarYTenerClavePrivada()
     {
         // Arrange
         var (pfxPath, password) = CrearCertificadoPruebaValido();
@@ -41,8 +41,8 @@ public class CertificateLoaderTests : IDisposable
         Assert.NotNull(certificado.Subject);
         
         // Verificar fechas de validez
-        Assert.True(certificado.NotBefore <= DateTime.Now, "NotBefore debe ser en el pasado o presente");
-        Assert.True(certificado.NotAfter > DateTime.Now, "NotAfter debe ser en el futuro");
+        Assert.True(certificado.NotBefore <= DateTime.UtcNow, "NotBefore debe ser en el pasado o presente");
+        Assert.True(certificado.NotAfter > DateTime.UtcNow, "NotAfter debe ser en el futuro");
 
         // Cleanup
         certificado.Dispose();

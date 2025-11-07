@@ -101,19 +101,19 @@ public class CertificateLoader : ICertificateLoader
         }
 
         // Validación 2: Verificar fechas de validez
-        var ahora = DateTime.Now;
+        var ahora = DateTime.UtcNow;
         if (ahora < certificado.NotBefore)
         {
             certificado.Dispose();
             throw new InvalidOperationException(
-                $"El certificado aún no es válido. Será válido desde: {certificado.NotBefore:yyyy-MM-dd HH:mm:ss}");
+                $"El certificado aún no es válido. Será válido desde: {certificado.NotBefore:yyyy-MM-dd HH:mm:ss} UTC");
         }
 
         if (ahora > certificado.NotAfter)
         {
             certificado.Dispose();
             throw new InvalidOperationException(
-                $"El certificado ha caducado. Caducó el: {certificado.NotAfter:yyyy-MM-dd HH:mm:ss}");
+                $"El certificado ha caducado. Caducó el: {certificado.NotAfter:yyyy-MM-dd HH:mm:ss} UTC");
         }
 
         // Validación 3: Verificar cadena de confianza (advertencia si no es confiable)
@@ -121,7 +121,8 @@ public class CertificateLoader : ICertificateLoader
         {
             // Configurar opciones de validación
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck; // No verificar revocación aquí
-            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.IgnoreNotTimeValid;
+            // No ignorar problemas de tiempo: dejar que se validen correctamente
+            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.NoFlag;
 
             bool chainIsValid = chain.Build(certificado);
             
