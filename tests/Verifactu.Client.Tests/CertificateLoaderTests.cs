@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Verifactu.Client.Models;
 using Verifactu.Client.Services;
 using Xunit;
 
@@ -184,6 +185,184 @@ public class CertificateLoaderTests : IDisposable
         cert2.Dispose();
     }
 
+    #region Tests para nuevos métodos (Fase 1)
+
+    /// <summary>
+    /// Test 9: Verifica que ValidarCertificado funciona correctamente con certificado válido.
+    /// </summary>
+    [Fact]
+    public void ValidarCertificado_ConCertificadoValido_DebeRetornarTrue()
+    {
+        // Arrange
+        var (pfxPath, password) = CrearCertificadoPruebaValido();
+        var certificado = _certificateLoader.CargarDesdePfx(pfxPath, password);
+
+        // Act
+        var resultado = _certificateLoader.ValidarCertificado(certificado);
+
+        // Assert
+        Assert.True(resultado);
+
+        // Cleanup
+        certificado.Dispose();
+    }
+
+    /// <summary>
+    /// Test 10: Verifica que ValidarCertificado lanza excepción con certificado sin clave privada.
+    /// </summary>
+    [Fact]
+    public void ValidarCertificado_ConCertificadoSinClavePrivada_DebeLanzarExcepcion()
+    {
+        // Arrange
+        var certificadoPublico = CrearCertificadoSoloPublico();
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            _certificateLoader.ValidarCertificado(certificadoPublico));
+
+        Assert.Contains("no contiene clave privada", exception.Message);
+
+        // Cleanup
+        certificadoPublico.Dispose();
+    }
+
+    /// <summary>
+    /// Test 11: Verifica que TiempoHastaExpiracion calcula correctamente.
+    /// </summary>
+    [Fact]
+    public void TiempoHastaExpiracion_ConCertificadoValido_DebeRetornarTiempoPositivo()
+    {
+        // Arrange
+        var (pfxPath, password) = CrearCertificadoPruebaValido();
+        var certificado = _certificateLoader.CargarDesdePfx(pfxPath, password);
+
+        // Act
+        var tiempo = _certificateLoader.TiempoHastaExpiracion(certificado);
+
+        // Assert
+        Assert.True(tiempo.TotalDays > 0, "El certificado de prueba debe tener tiempo positivo hasta expiración");
+        Assert.True(tiempo.TotalDays < 366, "El certificado de prueba expira en menos de 1 año");
+
+        // Cleanup
+        certificado.Dispose();
+    }
+
+    /// <summary>
+    /// Test 12: Verifica que ObtenerInformacion retorna datos correctos.
+    /// </summary>
+    [Fact]
+    public void ObtenerInformacion_ConCertificadoValido_DebeRetornarDatosCompletos()
+    {
+        // Arrange
+        var (pfxPath, password) = CrearCertificadoPruebaValido();
+        var certificado = _certificateLoader.CargarDesdePfx(pfxPath, password);
+
+        // Act
+        var info = _certificateLoader.ObtenerInformacion(certificado);
+
+        // Assert
+        Assert.NotNull(info);
+        Assert.Contains("Test Certificate", info.Subject);
+        Assert.NotEmpty(info.Thumbprint);
+        Assert.True(info.TieneClavePrivada);
+        Assert.True(info.EsValido);
+        Assert.True(info.TiempoHastaExpiracion.TotalDays > 0);
+        Assert.True(info.Version >= 3);
+        Assert.Equal("RSA", info.TipoClave);
+        Assert.Equal(2048, info.TamanoClaveBits);
+        Assert.True(info.EsAutofirmado);
+
+        // Cleanup
+        certificado.Dispose();
+    }
+
+    /// <summary>
+    /// Test 13: Verifica que CargarDesdeAlmacen lanza excepción con thumbprint vacío.
+    /// </summary>
+    [Fact]
+    public void CargarDesdeAlmacen_ConThumbprintVacio_DebeLanzarArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() =>
+            _certificateLoader.CargarDesdeAlmacen("", StoreLocation.CurrentUser));
+    }
+
+    /// <summary>
+    /// Test 14: Verifica que CargarDesdeAlmacen lanza excepción con thumbprint inexistente.
+    /// </summary>
+    [Fact]
+    public void CargarDesdeAlmacen_ConThumbprintInexistente_DebeLanzarInvalidOperationException()
+    {
+        // Arrange
+        var thumbprintInexistente = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            _certificateLoader.CargarDesdeAlmacen(thumbprintInexistente, StoreLocation.CurrentUser));
+
+        Assert.Contains("No se encontró ningún certificado", exception.Message);
+        Assert.Contains(thumbprintInexistente, exception.Message);
+    }
+
+    /// <summary>
+    /// Test 15: Verifica que CargarDesdeAlmacen funciona cuando un certificado existe en el almacén.
+    /// Este test solo se ejecuta si hay al menos un certificado en el almacén del usuario actual.
+    /// </summary>
+    [Fact]
+    public void CargarDesdeAlmacen_ConCertificadoEnAlmacen_DebeCargarlo()
+    {
+        // Arrange: Instalar un certificado de prueba en el almacén temporal
+        var (pfxPath, password) = CrearCertificadoPruebaValido();
+        var certOriginal = _certificateLoader.CargarDesdePfx(pfxPath, password);
+        
+        // Instalar en almacén (en la práctica, esto se hace con herramientas del sistema)
+        // Para el test, verificamos que el thumbprint funciona
+        var thumbprint = certOriginal.Thumbprint;
+
+        try
+        {
+            // Intentar instalar el certificado en el almacén del usuario
+            using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadWrite);
+            store.Add(certOriginal);
+            store.Close();
+
+            // Act: Cargar desde el almacén
+            var certFromStore = _certificateLoader.CargarDesdeAlmacen(thumbprint, StoreLocation.CurrentUser);
+
+            // Assert
+            Assert.NotNull(certFromStore);
+            Assert.Equal(thumbprint, certFromStore.Thumbprint);
+            Assert.True(certFromStore.HasPrivateKey);
+
+            // Cleanup
+            certFromStore.Dispose();
+        }
+        finally
+        {
+            // Limpiar: remover el certificado del almacén
+            try
+            {
+                using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                store.Open(OpenFlags.ReadWrite);
+                var certsToRemove = store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false);
+                if (certsToRemove.Count > 0)
+                {
+                    store.Remove(certsToRemove[0]);
+                }
+                store.Close();
+            }
+            catch
+            {
+                // Ignorar errores de limpieza
+            }
+
+            certOriginal.Dispose();
+        }
+    }
+
+    #endregion
+
     #region Métodos auxiliares para crear certificados de prueba
 
     /// <summary>
@@ -316,6 +495,31 @@ public class CertificateLoaderTests : IDisposable
 
         certificate.Dispose();
         return pfxPath;
+    }
+
+    /// <summary>
+    /// Crea un certificado solo con parte pública (sin clave privada).
+    /// Para tests de validación.
+    /// </summary>
+    private X509Certificate2 CrearCertificadoSoloPublico()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=Public Only Certificate",
+            rsa,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+
+        var certificate = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow.AddYears(1));
+
+        // Exportar solo la parte pública
+        var publicBytes = certificate.Export(X509ContentType.Cert);
+        var publicCert = X509CertificateLoader.LoadCertificate(publicBytes);
+
+        certificate.Dispose();
+        return publicCert;
     }
 
     #endregion

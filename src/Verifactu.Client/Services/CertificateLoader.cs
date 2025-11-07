@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using Verifactu.Client.Models;
 
 namespace Verifactu.Client.Services;
 
@@ -141,5 +142,184 @@ public class CertificateLoader : ICertificateLoader
         }
 
         return certificado;
+    }
+
+    /// <summary>
+    /// Carga un certificado desde el almacén de certificados del sistema operativo.
+    /// </summary>
+    /// <param name="thumbprint">Huella digital del certificado (sin espacios ni guiones)</param>
+    /// <param name="location">Ubicación del almacén (CurrentUser o LocalMachine)</param>
+    /// <param name="storeName">Nombre del almacén (por defecto: My/Personal)</param>
+    /// <returns>Certificado X.509 con clave privada</returns>
+    /// <remarks>
+    /// BÚSQUEDA DE CERTIFICADOS:
+    /// - Busca en el almacén especificado por thumbprint (huella SHA-1)
+    /// - El thumbprint debe estar en formato hexadecimal sin espacios
+    /// - Ejemplo: "3B7E039FDBDA89ABC12345678901234567890ABC"
+    /// 
+    /// ALMACENES COMUNES:
+    /// - My (Personal): Certificados personales del usuario/máquina
+    /// - Root: Certificados de autoridades raíz confiables
+    /// - CertificateAuthority: Certificados de CAs intermedias
+    /// - TrustedPeople: Certificados de personas de confianza
+    /// 
+    /// PERMISOS:
+    /// - CurrentUser: No requiere permisos de administrador
+    /// - LocalMachine: Puede requerir permisos de administrador para algunos almacenes
+    /// 
+    /// COMANDOS ÚTILES:
+    /// Windows: certmgr.msc (CurrentUser) o certlm.msc (LocalMachine)
+    /// PowerShell: Get-ChildItem Cert:\CurrentUser\My | Format-List Subject,Thumbprint
+    /// </remarks>
+    public X509Certificate2 CargarDesdeAlmacen(
+        string thumbprint,
+        StoreLocation location = StoreLocation.CurrentUser,
+        StoreName storeName = StoreName.My)
+    {
+        if (string.IsNullOrWhiteSpace(thumbprint))
+            throw new ArgumentException("El thumbprint no puede estar vacío", nameof(thumbprint));
+
+        // Limpiar thumbprint (remover espacios y guiones que a veces se copian)
+        thumbprint = thumbprint.Replace(" ", "").Replace("-", "").Trim();
+
+        X509Store? store = null;
+        try
+        {
+            store = new X509Store(storeName, location);
+            store.Open(OpenFlags.ReadOnly);
+
+            // Buscar certificado por thumbprint
+            var certificados = store.Certificates.Find(
+                X509FindType.FindByThumbprint,
+                thumbprint,
+                validOnly: false); // No requerir validez para permitir certificados de prueba
+
+            if (certificados.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No se encontró ningún certificado con thumbprint '{thumbprint}' " +
+                    $"en {location}\\{storeName}. " +
+                    $"Verifica que el certificado esté instalado en el almacén correcto.");
+            }
+
+            var certificado = certificados[0];
+
+            // Validar que tiene clave privada
+            if (!certificado.HasPrivateKey)
+            {
+                throw new InvalidOperationException(
+                    $"El certificado con thumbprint '{thumbprint}' no tiene clave privada. " +
+                    "VERI*FACTU requiere certificados con clave privada para firma digital y mTLS.");
+            }
+
+            // Validar fechas de validez
+            var ahora = DateTime.UtcNow;
+            if (ahora < certificado.NotBefore)
+            {
+                throw new InvalidOperationException(
+                    $"El certificado aún no es válido. Será válido desde: {certificado.NotBefore:yyyy-MM-dd HH:mm:ss} UTC");
+            }
+
+            if (ahora > certificado.NotAfter)
+            {
+                throw new InvalidOperationException(
+                    $"El certificado ha caducado. Caducó el: {certificado.NotAfter:yyyy-MM-dd HH:mm:ss} UTC");
+            }
+
+            return certificado;
+        }
+        finally
+        {
+            store?.Close();
+        }
+    }
+
+    /// <summary>
+    /// Valida que un certificado cumple los requisitos básicos para VERI*FACTU.
+    /// </summary>
+    /// <param name="certificate">Certificado a validar</param>
+    /// <returns>True si el certificado es válido</returns>
+    /// <exception cref="InvalidOperationException">Si el certificado no cumple los requisitos</exception>
+    public bool ValidarCertificado(X509Certificate2 certificate)
+    {
+        if (certificate == null)
+            throw new ArgumentNullException(nameof(certificate));
+
+        // Validación 1: Debe tener clave privada
+        if (!certificate.HasPrivateKey)
+        {
+            throw new InvalidOperationException(
+                "El certificado no contiene clave privada. " +
+                "VERI*FACTU requiere certificados con clave privada para firma digital y autenticación mTLS.");
+        }
+
+        // Validación 2: Verificar fechas de validez
+        var ahora = DateTime.UtcNow;
+        if (ahora < certificate.NotBefore)
+        {
+            throw new InvalidOperationException(
+                $"El certificado aún no es válido. Será válido desde: {certificate.NotBefore:yyyy-MM-dd HH:mm:ss} UTC");
+        }
+
+        if (ahora > certificate.NotAfter)
+        {
+            throw new InvalidOperationException(
+                $"El certificado ha caducado. Caducó el: {certificate.NotAfter:yyyy-MM-dd HH:mm:ss} UTC");
+        }
+
+        // Validación 3: Verificar que tiene un algoritmo de firma soportado
+        var sigAlg = certificate.SignatureAlgorithm.FriendlyName?.ToLowerInvariant() ?? "";
+        if (!sigAlg.Contains("sha256") && !sigAlg.Contains("sha384") && !sigAlg.Contains("sha512"))
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"ADVERTENCIA: El certificado usa un algoritmo de firma débil: {certificate.SignatureAlgorithm.FriendlyName}. " +
+                "Se recomienda usar SHA-256 o superior.");
+        }
+
+        // Validación 4: Verificar longitud de clave
+        var rsaKey = certificate.GetRSAPublicKey();
+        if (rsaKey != null && rsaKey.KeySize < 2048)
+        {
+            throw new InvalidOperationException(
+                $"El certificado RSA tiene una clave de {rsaKey.KeySize} bits. " +
+                "VERI*FACTU requiere un mínimo de 2048 bits para RSA.");
+        }
+
+        var ecdsaKey = certificate.GetECDsaPublicKey();
+        if (ecdsaKey != null && ecdsaKey.KeySize < 256)
+        {
+            throw new InvalidOperationException(
+                $"El certificado ECDSA tiene una clave de {ecdsaKey.KeySize} bits. " +
+                "VERI*FACTU requiere un mínimo de 256 bits para ECDSA.");
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Calcula el tiempo restante hasta la expiración del certificado.
+    /// </summary>
+    /// <param name="certificate">Certificado a verificar</param>
+    /// <returns>TimeSpan hasta la expiración (negativo si ya expiró)</returns>
+    public TimeSpan TiempoHastaExpiracion(X509Certificate2 certificate)
+    {
+        if (certificate == null)
+            throw new ArgumentNullException(nameof(certificate));
+
+        return certificate.NotAfter - DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Obtiene información detallada sobre un certificado.
+    /// Útil para diagnóstico y logging.
+    /// </summary>
+    /// <param name="certificate">Certificado del cual obtener información</param>
+    /// <returns>Objeto CertificateInfo con toda la información relevante</returns>
+    public CertificateInfo ObtenerInformacion(X509Certificate2 certificate)
+    {
+        if (certificate == null)
+            throw new ArgumentNullException(nameof(certificate));
+
+        return CertificateInfo.FromCertificate(certificate);
     }
 }
