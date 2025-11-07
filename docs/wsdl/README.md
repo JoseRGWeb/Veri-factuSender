@@ -84,3 +84,24 @@ xmlns:con="https://www2.agenciatributaria.gob.es/static_files/common/internet/de
 ## Referencias
 - Documentación oficial: `docs/Veri-Factu_Descripcion_SWeb.md`
 - Guía técnica: `docs/Verifactu-Guia-Tecnica.md`
+- Guía de uso del cliente SOAP: `docs/uso-cliente-soap.md`
+
+## Validación Manual
+
+Para validar manualmente contra los esquemas XSD oficiales:
+
+1. Descargar los archivos XSD desde las URLs indicadas arriba
+2. Usar herramientas de validación XML como `xmllint`:
+   ```bash
+   xmllint --noout --schema SuministroLR.xsd mi-registro.xml
+   ```
+3. O usar validadores online respetando la confidencialidad de los datos
+
+## Pruebas con Sandbox AEAT
+
+El Portal de Pruebas Externas de AEAT requiere:
+- Certificado digital válido
+- Acceso a las URLs de sandbox
+- Datos de prueba conforme a las guías oficiales
+
+Ver `docs/entorno-pruebas.md` y `docs/SANDBOX-QUICKSTART.md` para más detalles.

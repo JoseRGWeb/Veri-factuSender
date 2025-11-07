@@ -147,6 +147,44 @@ public class VerifactuSoapClient : IVerifactuSoapClient
     }
 
     /// <summary>
+    /// Envía un registro de facturación firmado (alta o anulación) y parsea la respuesta automáticamente.
+    /// </summary>
+    /// <param name="xmlFirmado">Documento XML firmado del registro de facturación</param>
+    /// <param name="cert">Certificado digital X.509 para mTLS</param>
+    /// <param name="ct">Token de cancelación</param>
+    /// <returns>Respuesta parseada de la operación RegFacturacionAlta</returns>
+    /// <exception cref="HttpRequestException">Error de comunicación HTTP</exception>
+    /// <exception cref="TimeoutException">Timeout en la operación</exception>
+    /// <exception cref="ArgumentException">Respuesta SOAP inválida</exception>
+    public async Task<RespuestaSuministro> EnviarRegFacturacionAltaAsync(
+        XmlDocument xmlFirmado, 
+        X509Certificate2 cert, 
+        CancellationToken ct = default)
+    {
+        var responseXml = await EnviarRegistroAsync(xmlFirmado, cert, ct);
+        return ParsearRespuestaSuministro(responseXml);
+    }
+
+    /// <summary>
+    /// Realiza una consulta de registros de facturación y parsea la respuesta automáticamente.
+    /// </summary>
+    /// <param name="xmlConsulta">Documento XML de consulta</param>
+    /// <param name="cert">Certificado digital X.509 para mTLS</param>
+    /// <param name="ct">Token de cancelación</param>
+    /// <returns>Respuesta parseada de la operación ConsultaLRFacturas</returns>
+    /// <exception cref="HttpRequestException">Error de comunicación HTTP</exception>
+    /// <exception cref="TimeoutException">Timeout en la operación</exception>
+    /// <exception cref="ArgumentException">Respuesta SOAP inválida</exception>
+    public async Task<RespuestaConsultaLR> ConsultarLRFacturasAsync(
+        XmlDocument xmlConsulta, 
+        X509Certificate2 cert, 
+        CancellationToken ct = default)
+    {
+        var responseXml = await EnviarRegistroAsync(xmlConsulta, cert, ct);
+        return ParsearRespuestaConsultaLR(responseXml);
+    }
+
+    /// <summary>
     /// Construye el sobre SOAP 1.1 para la operación RegFacturacionAlta
     /// según el WSDL oficial de AEAT.
     /// </summary>
