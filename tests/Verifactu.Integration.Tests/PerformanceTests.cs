@@ -77,7 +77,7 @@ public class PerformanceTests : IClassFixture<AeatSandboxFixture>
         var tiempoMax = tiempos.Max();
         var tiempoMin = tiempos.Min();
 
-        // Logs de métricas
+        // Logs de métricas (capturados por el test runner)
         System.Diagnostics.Debug.WriteLine($"=== Métricas de Rendimiento Secuencial ===");
         System.Diagnostics.Debug.WriteLine($"Facturas enviadas: {cantidadFacturas}");
         System.Diagnostics.Debug.WriteLine($"Facturas exitosas: {exitosas}");

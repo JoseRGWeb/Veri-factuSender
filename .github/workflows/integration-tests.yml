@@ -21,8 +21,11 @@ jobs:
   integration-tests:
     name: Run Integration Tests (Sandbox)
     runs-on: ubuntu-latest
-    # Solo ejecutar si hay certificado configurado
+    # Solo ejecutar en workflow_dispatch o push a main
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    
+    env:
+      HAS_CERTIFICATE: ${{ secrets.TEST_CERT_PFX != '' }}
     
     steps:
     - name: Checkout code
@@ -41,13 +44,13 @@ jobs:
     
     # Configurar certificado si está disponible en secretos
     - name: Setup test certificate
-      if: secrets.TEST_CERT_PFX != ''
+      if: env.HAS_CERTIFICATE == 'true'
       run: |
         echo "${{ secrets.TEST_CERT_PFX }}" | base64 -d > /tmp/test-cert.pfx
         chmod 600 /tmp/test-cert.pfx
       
     - name: Run integration tests (without certificate)
-      if: secrets.TEST_CERT_PFX == ''
+      if: env.HAS_CERTIFICATE != 'true'
       run: |
         echo "ℹ️ No se encontró certificado configurado en secretos"
         echo "Los tests de integración se ejecutarán pero se omitirán (skip)"
@@ -57,7 +60,7 @@ jobs:
           --logger "console;verbosity=detailed"
       
     - name: Run integration tests (with certificate)
-      if: secrets.TEST_CERT_PFX != ''
+      if: env.HAS_CERTIFICATE == 'true'
       env:
         Certificado__PfxPath: /tmp/test-cert.pfx
         Certificado__PfxPassword: ${{ secrets.TEST_CERT_PASSWORD }}
@@ -68,7 +71,7 @@ jobs:
           --logger "console;verbosity=detailed"
       
     - name: Run performance tests
-      if: github.event.inputs.run_performance_tests == 'true' && secrets.TEST_CERT_PFX != ''
+      if: env.HAS_CERTIFICATE == 'true' && github.event.inputs.run_performance_tests == 'true'
       env:
         Certificado__PfxPath: /tmp/test-cert.pfx
         Certificado__PfxPassword: ${{ secrets.TEST_CERT_PASSWORD }}
@@ -79,7 +82,7 @@ jobs:
           --logger "console;verbosity=detailed"
       
     - name: Cleanup certificate
-      if: always() && secrets.TEST_CERT_PFX != ''
+      if: always()
       run: |
         rm -f /tmp/test-cert.pfx
         

@@ -159,13 +159,8 @@ public class SecurityTests : IClassFixture<AeatSandboxFixture>
         // Verificar que tiene clave privada
         Assert.True(cert.HasPrivateKey);
         
-        // Log información del certificado para debugging
-        System.Diagnostics.Debug.WriteLine($"=== Información del Certificado ===");
-        System.Diagnostics.Debug.WriteLine($"Subject: {cert.Subject}");
-        System.Diagnostics.Debug.WriteLine($"Issuer: {cert.Issuer}");
-        System.Diagnostics.Debug.WriteLine($"Valid From: {cert.NotBefore}");
-        System.Diagnostics.Debug.WriteLine($"Valid To: {cert.NotAfter}");
-        System.Diagnostics.Debug.WriteLine($"Thumbprint: {cert.Thumbprint}");
+        // Verificar fechas de validez
+        Assert.True(cert.NotAfter > DateTime.Now, "El certificado debe estar vigente");
     }
 
     /// <summary>
