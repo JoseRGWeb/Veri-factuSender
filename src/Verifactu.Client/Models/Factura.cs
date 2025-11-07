@@ -77,19 +77,53 @@ public record SistemaInformatico(
 );
 
 /// <summary>
-/// Factura simplificada para uso interno
+/// Factura completa con todos los campos obligatorios y opcionales según especificación VERI*FACTU
 /// </summary>
 public record Factura(
+    // Campos obligatorios básicos
     string Serie,
     string Numero,
     DateTime FechaEmision,
+    TipoFactura TipoFactura,                  // Obligatorio: F1, F2, F3, F4, R1-R5
+    string DescripcionOperacion,              // Obligatorio: Descripción de la operación
+    
+    // Emisor y destinatario
     Emisor Emisor,
-    Receptor Receptor,
-    List<Linea> Lineas,
-    TotalesFactura Totales,
+    Receptor? Receptor = null,                // Opcional en facturas simplificadas (F2)
+    
+    // Datos de la factura
+    List<Linea>? Lineas = null,               // Uso interno (no se envía a AEAT)
+    TotalesFactura? Totales = null,           // Calculado
+    List<DetalleDesglose>? Desglose = null,   // Desglose de IVA obligatorio
+    
+    // Campos opcionales comunes
     string Moneda = "EUR",
     string? Observaciones = null,
-    string TipoFactura = "F1",               // F1: Factura completa
-    string? DescripcionOperacion = null,
-    List<DetalleDesglose>? Desglose = null   // Desglose de IVA
+    DateTime? FechaOperacion = null,          // Si difiere de FechaEmision
+    
+    // Campos para facturas rectificativas (R1-R5)
+    TipoRectificativa? TipoRectificativa = null,              // Obligatorio si TipoFactura es R1-R5
+    List<FacturaRectificada>? FacturasRectificadas = null,    // Obligatorio si TipoFactura es R1-R5
+    decimal? ImporteRectificacionSustitutiva = null,          // Para rectificativa por sustitución
+    
+    // Clave de régimen especial
+    ClaveRegimenEspecialOTrascendencia? ClaveRegimenEspecialOTrascendencia = null,
+    
+    // Destinatarios múltiples (para facturas con varios destinatarios)
+    List<DestinatarioCompleto>? Destinatarios = null,
+    
+    // Facturación por terceros
+    FacturacionTerceros? FacturacionTerceros = null,
+    FacturacionTerceros? FacturacionDestinatario = null,
+    
+    // Desglose de impuestos (alternativo/complementario a Desglose)
+    List<DetalleIVA>? DesgloseIVA = null,
+    List<DetalleIGIC>? DesgloseIGIC = null,
+    List<DetalleIRPF>? DesgloseIRPF = null,
+    
+    // Macrodato (para facturas que superan ciertos importes)
+    bool Macrodato = false,
+    
+    // Referencia externa
+    string? RefExterna = null
 );

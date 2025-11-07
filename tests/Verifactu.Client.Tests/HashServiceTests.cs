@@ -203,7 +203,7 @@ public class HashServiceTests
             IDEmisorFactura = "B12345678",
             NumSerieFactura = "A/2024/001",
             FechaExpedicionFactura = fechaExpedicion,
-            TipoFactura = "F1",
+            TipoFactura = TipoFactura.F1,
             CuotaTotal = 21.00m,
             ImporteTotal = 121.00m,
             FechaHoraHusoGenRegistro = fechaGenRegistro
@@ -260,12 +260,12 @@ public class HashServiceTests
             Serie: "A",
             Numero: "1",
             FechaEmision: new DateTime(2024, 9, 13, 0, 0, 0, DateTimeKind.Utc),
+            TipoFactura: TipoFactura.F1,
+            DescripcionOperacion: "Operación de prueba",
             Emisor: new Emisor("B12345678", "EMPRESA TEST SL"),
             Receptor: new Receptor("12345678Z", "CLIENTE TEST"),
             Lineas: new(),
-            Totales: new TotalesFactura(100, 21, 121),
-            TipoFactura: "F1",
-            DescripcionOperacion: "Operación de prueba"
+            Totales: new TotalesFactura(100, 21, 121)
         );
         
         var desglose = new List<DetalleDesglose>
@@ -294,7 +294,7 @@ public class HashServiceTests
             NumSerieFactura: "A/2024/001",
             FechaExpedicionFactura: new DateTime(2024, 9, 13, 0, 0, 0, DateTimeKind.Utc),
             NombreRazonEmisor: "EMPRESA TEST SL",
-            TipoFactura: "F1",
+            TipoFactura: TipoFactura.F1,
             DescripcionOperacion: "Operación de prueba",
             Desglose: desglose,
             CuotaTotal: 21.00m,

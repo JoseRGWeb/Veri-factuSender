@@ -19,6 +19,8 @@ public class XmlSerializationTests
             Serie: "A",
             Numero: "123",
             FechaEmision: new DateTime(2024, 2, 13),
+            TipoFactura: TipoFactura.F1,
+            DescripcionOperacion: "Venta de productos",
             Emisor: new Emisor("B12345678", "EMPRESA TEST SL"),
             Receptor: new Receptor("12345678Z", "CLIENTE TEST"),
             Lineas: new List<Linea>
@@ -26,9 +28,7 @@ public class XmlSerializationTests
                 new Linea("Producto 1", 1, 100, 21),
                 new Linea("Producto 2", 2, 50, 21)
             },
-            Totales: new TotalesFactura(200, 42, 242),
-            TipoFactura: "F1",
-            DescripcionOperacion: "Venta de productos"
+            Totales: new TotalesFactura(200, 42, 242)
         );
 
         var desglose = new List<DetalleDesglose>
@@ -57,7 +57,7 @@ public class XmlSerializationTests
             NumSerieFactura: "A123",
             FechaExpedicionFactura: new DateTime(2024, 2, 13),
             NombreRazonEmisor: "EMPRESA TEST SL",
-            TipoFactura: "F1",
+            TipoFactura: TipoFactura.F1,
             DescripcionOperacion: "Venta de productos",
             Desglose: desglose,
             CuotaTotal: 42,
