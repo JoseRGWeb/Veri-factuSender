@@ -126,3 +126,40 @@ public interface IReintentosService
         OpcionesReintento? opciones = null,
         CancellationToken ct = default);
 }
+
+public interface IQrService
+{
+    /// <summary>
+    /// Genera la URL de cotejo para verificar el registro en la sede electrónica de AEAT.
+    /// Según especificación oficial S16 de AEAT.
+    /// </summary>
+    /// <param name="factura">Factura para la que generar la URL de cotejo</param>
+    /// <param name="huella">Huella SHA-256 del registro de facturación (64 caracteres hexadecimales)</param>
+    /// <returns>URL completa de cotejo con todos los parámetros necesarios</returns>
+    string GenerarUrlCotejo(Factura factura, string huella);
+
+    /// <summary>
+    /// Genera código QR en formato PNG como array de bytes.
+    /// </summary>
+    /// <param name="urlCotejo">URL de cotejo a codificar en el QR</param>
+    /// <param name="pixelsPorModulo">Tamaño del QR (píxeles por módulo, por defecto 20)</param>
+    /// <returns>Imagen QR en formato PNG como array de bytes</returns>
+    byte[] GenerarQrPng(string urlCotejo, int pixelsPorModulo = 20);
+
+    /// <summary>
+    /// Genera código QR en formato SVG.
+    /// </summary>
+    /// <param name="urlCotejo">URL de cotejo a codificar en el QR</param>
+    /// <param name="pixelsPorModulo">Tamaño del QR (píxeles por módulo, por defecto 10)</param>
+    /// <returns>Imagen QR en formato SVG como cadena XML</returns>
+    string GenerarQrSvg(string urlCotejo, int pixelsPorModulo = 10);
+
+    /// <summary>
+    /// Genera código QR en formato Base64 (PNG codificado).
+    /// Útil para incrustar en HTML/CSS.
+    /// </summary>
+    /// <param name="urlCotejo">URL de cotejo a codificar en el QR</param>
+    /// <param name="pixelsPorModulo">Tamaño del QR (píxeles por módulo, por defecto 20)</param>
+    /// <returns>Imagen QR en formato Base64 (data URI completo para HTML)</returns>
+    string GenerarQrBase64(string urlCotejo, int pixelsPorModulo = 20);
+}
