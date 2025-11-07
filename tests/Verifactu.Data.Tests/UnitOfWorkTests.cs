@@ -115,7 +115,7 @@ public class UnitOfWorkTests : IDisposable
     }
 
     [Fact]
-    public async Task MultiplesSaveChanges_DebeManetenerConteoCorreto()
+    public async Task MultiplesSaveChanges_DebeMantenerConteoCorreto()
     {
         // Arrange
         var registro1 = CrearRegistro("A", "001");
