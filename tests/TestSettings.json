@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Configuración común para todos los proyectos de tests",
+  
+  "TestSettings": {
+    "RunIntegrationTests": true,
+    "RunPerformanceTests": false,
+    "RunLongRunningTests": false,
+    "DefaultTimeout": 30000,
+    "RetryCount": 3
+  },
+  
+  "SandboxEndpoints": {
+    "AEAT": "https://prewww1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion",
+    "AEATProduccion": "https://www1.agenciatributaria.gob.es/wlpl/TIKE-CONT/SistemaFacturacion"
+  },
+  
+  "PerformanceTargets": {
+    "MaxTimePerInvoice": 5000,
+    "MaxTimeHashCalculation": 10,
+    "MaxTimeXmlSerialization": 50,
+    "MinSuccessRate": 80
+  },
+  
+  "TestData": {
+    "DefaultEmisor": {
+      "Nif": "B12345678",
+      "Nombre": "EMPRESA PRUEBAS SANDBOX SL"
+    },
+    "DefaultReceptor": {
+      "Nif": "12345678A",
+      "Nombre": "CLIENTE PRUEBAS SANDBOX"
+    },
+    "SistemaInformatico": {
+      "Nombre": "VerifactuSender",
+      "Id": "TEST001",
+      "Version": "1.0",
+      "NumeroInstalacion": "1"
+    }
+  },
+  
+  "Logging": {
+    "MinimumLevel": "Debug",
+    "EnableDetailedErrors": true,
+    "LogFailedTestsOnly": false
+  }
+}
