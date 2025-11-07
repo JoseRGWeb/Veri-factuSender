@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
@@ -262,7 +264,11 @@ public class VerifactuSoapClient : IVerifactuSoapClient
             result.DatosPresentacion = new DatosPresentacion
             {
                 NIFPresentador = datosPres.Element(sf + "NIFPresentador")?.Value,
-                TimestampPresentacion = DateTime.TryParse(datosPres.Element(sf + "TimestampPresentacion")?.Value, out var ts) ? ts : null
+                TimestampPresentacion = DateTime.TryParse(
+                    datosPres.Element(sf + "TimestampPresentacion")?.Value, 
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var ts) ? ts : null
             };
         }
 
@@ -304,7 +310,11 @@ public class VerifactuSoapClient : IVerifactuSoapClient
                 {
                     IDEmisorFactura = idFactura.Element(sf + "IDEmisorFactura")?.Value,
                     NumSerieFactura = idFactura.Element(sf + "NumSerieFactura")?.Value,
-                    FechaExpedicionFactura = DateTime.TryParse(idFactura.Element(sf + "FechaExpedicionFactura")?.Value, out var fecha) ? fecha : null
+                    FechaExpedicionFactura = DateTime.TryParse(
+                        idFactura.Element(sf + "FechaExpedicionFactura")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var fecha) ? fecha : null
                 };
             }
 
@@ -406,7 +416,11 @@ public class VerifactuSoapClient : IVerifactuSoapClient
                 {
                     IDEmisorFactura = idFactura.Element(sf + "IDEmisorFactura")?.Value,
                     NumSerieFactura = idFactura.Element(sf + "NumSerieFactura")?.Value,
-                    FechaExpedicionFactura = DateTime.TryParse(idFactura.Element(sf + "FechaExpedicionFactura")?.Value, out var f) ? f : null
+                    FechaExpedicionFactura = DateTime.TryParse(
+                        idFactura.Element(sf + "FechaExpedicionFactura")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var f) ? f : null
                 };
             }
 
@@ -418,10 +432,14 @@ public class VerifactuSoapClient : IVerifactuSoapClient
                 {
                     TipoFactura = datos.Element(conResp + "TipoFactura")?.Value,
                     DescripcionOperacion = datos.Element(conResp + "DescripcionOperacion")?.Value,
-                    CuotaTotal = decimal.TryParse(datos.Element(conResp + "CuotaTotal")?.Value, out var ct) ? ct : null,
-                    ImporteTotal = decimal.TryParse(datos.Element(conResp + "ImporteTotal")?.Value, out var it) ? it : null,
+                    CuotaTotal = decimal.TryParse(datos.Element(conResp + "CuotaTotal")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var ct) ? ct : null,
+                    ImporteTotal = decimal.TryParse(datos.Element(conResp + "ImporteTotal")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var it) ? it : null,
                     Huella = datos.Element(conResp + "Huella")?.Value,
-                    FechaHoraHusoGenRegistro = DateTime.TryParse(datos.Element(conResp + "FechaHoraHusoGenRegistro")?.Value, out var fh) ? fh : null
+                    FechaHoraHusoGenRegistro = DateTime.TryParse(
+                        datos.Element(conResp + "FechaHoraHusoGenRegistro")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var fh) ? fh : null
                 };
             }
 
@@ -436,7 +454,11 @@ public class VerifactuSoapClient : IVerifactuSoapClient
             {
                 IDEmisorFactura = clave.Element(sf + "IDEmisorFactura")?.Value,
                 NumSerieFactura = clave.Element(sf + "NumSerieFactura")?.Value,
-                FechaExpedicionFactura = DateTime.TryParse(clave.Element(sf + "FechaExpedicionFactura")?.Value, out var fc) ? fc : null
+                FechaExpedicionFactura = DateTime.TryParse(
+                    clave.Element(sf + "FechaExpedicionFactura")?.Value,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var fc) ? fc : null
             };
         }
 
