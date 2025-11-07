@@ -45,6 +45,16 @@ public interface IVerifactuSoapClient
     /// Retorna la respuesta SOAP cruda (para parseo posterior).
     /// </summary>
     Task<string> EnviarRegistroAsync(XmlDocument xmlFirmado, X509Certificate2 cert, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Envía un registro de facturación (alta o anulación) y parsea la respuesta.
+    /// </summary>
+    Task<RespuestaSuministro> EnviarRegFacturacionAltaAsync(XmlDocument xmlFirmado, X509Certificate2 cert, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Realiza una consulta de registros de facturación y parsea la respuesta.
+    /// </summary>
+    Task<RespuestaConsultaLR> ConsultarLRFacturasAsync(XmlDocument xmlConsulta, X509Certificate2 cert, CancellationToken ct = default);
 }
 
 public interface IXmlValidationService

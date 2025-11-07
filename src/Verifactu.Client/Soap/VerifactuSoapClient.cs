@@ -1,9 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
+using Verifactu.Client.Models;
 
 namespace Verifactu.Client.Services;
 
@@ -50,6 +56,9 @@ public class VerifactuSoapClient : IVerifactuSoapClient
     /// Debe incluir la clave privada y estar en formato PFX/PKCS#12.</param>
     /// <param name="ct">Token de cancelación para la operación asíncrona</param>
     /// <returns>Respuesta XML del servidor AEAT (RespuestaSuministro)</returns>
+    /// <exception cref="HttpRequestException">Error de comunicación HTTP</exception>
+    /// <exception cref="TimeoutException">Timeout en la operación</exception>
+    /// <exception cref="OperationCanceledException">Operación cancelada</exception>
     /// <remarks>
     /// FLUJO DE AUTENTICACIÓN mTLS:
     /// 1. Cliente inicia handshake TLS con servidor AEAT
@@ -72,6 +81,12 @@ public class VerifactuSoapClient : IVerifactuSoapClient
     /// - Content-Type: text/xml; charset=utf-8
     /// - SOAPAction: [valor configurado en constructor]
     /// - User-Agent: (implícito por HttpClient)
+    /// 
+    /// TIMEOUT Y REINTENTOS:
+    /// - Timeout predeterminado: 120 segundos
+    /// - Se recomienda implementar lógica de reintento con backoff exponencial
+    ///   para errores de red transitorios (5xx, timeouts)
+    /// - No reintentar errores de validación (4xx, SOAP Fault)
     /// </remarks>
     public async Task<string> EnviarRegistroAsync(XmlDocument xmlFirmado, X509Certificate2 cert, CancellationToken ct = default)
     {
@@ -86,72 +101,367 @@ public class VerifactuSoapClient : IVerifactuSoapClient
         // handler.SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
         
         using var http = new HttpClient(handler);
+        
+        // Configurar timeout de 120 segundos (recomendado por AEAT)
+        http.Timeout = TimeSpan.FromSeconds(120);
 
-        // Construir sobre SOAP 1.1 con el registro XML firmado
-        var soapEnvelope = ConstruirSobreSoap(xmlFirmado);
-        
-        // Preparar contenido HTTP con encoding UTF-8 y Content-Type text/xml
-        var content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml");
-        
-        // Agregar header SOAPAction si está configurado (requerido por SOAP 1.1)
-        // El valor debe coincidir con la operación definida en el WSDL de AEAT
-        if (!string.IsNullOrWhiteSpace(_soapAction))
+        try
         {
-            content.Headers.Add("SOAPAction", _soapAction);
-        }
+            // Construir sobre SOAP 1.1 con el registro XML firmado
+            var soapEnvelope = ConstruirSobreSoap(xmlFirmado);
+            
+            // Preparar contenido HTTP con encoding UTF-8 y Content-Type text/xml
+            var content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml");
+            
+            // Agregar header SOAPAction si está configurado (requerido por SOAP 1.1)
+            // El valor debe coincidir con la operación definida en el WSDL de AEAT
+            if (!string.IsNullOrWhiteSpace(_soapAction))
+            {
+                content.Headers.Add("SOAPAction", _soapAction);
+            }
 
-        // Enviar petición POST al endpoint de AEAT
-        // La conexión se establece sobre TLS 1.2+ con autenticación mutua
-        using var resp = await http.PostAsync(_endpointUrl, content, ct);
-        
-        // Verificar que la respuesta sea exitosa (2xx)
-        // Si hay error, lanza HttpRequestException con el código de estado
-        resp.EnsureSuccessStatusCode();
-        
-        // Retornar el cuerpo de la respuesta (XML de respuesta SOAP)
-        return await resp.Content.ReadAsStringAsync(ct);
+            // Enviar petición POST al endpoint de AEAT
+            // La conexión se establece sobre TLS 1.2+ con autenticación mutua
+            using var resp = await http.PostAsync(_endpointUrl, content, ct);
+            
+            // Verificar que la respuesta sea exitosa (2xx)
+            // Si hay error, lanza HttpRequestException con el código de estado
+            resp.EnsureSuccessStatusCode();
+            
+            // Retornar el cuerpo de la respuesta (XML de respuesta SOAP)
+            return await resp.Content.ReadAsStringAsync(ct);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            // Timeout de la operación HTTP (no cancelación explícita)
+            throw new TimeoutException($"Timeout al enviar registro a AEAT. Endpoint: {_endpointUrl}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            // Error de red o HTTP (400, 500, etc.)
+            throw new HttpRequestException($"Error HTTP al enviar registro a AEAT. Endpoint: {_endpointUrl}. Detalles: {ex.Message}", ex);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Operación cancelada explícitamente
+            throw;
+        }
     }
 
     /// <summary>
-    /// Construye el sobre SOAP 1.1 que envuelve el registro de facturación XML.
+    /// Envía un registro de facturación firmado (alta o anulación) y parsea la respuesta automáticamente.
+    /// </summary>
+    /// <param name="xmlFirmado">Documento XML firmado del registro de facturación</param>
+    /// <param name="cert">Certificado digital X.509 para mTLS</param>
+    /// <param name="ct">Token de cancelación</param>
+    /// <returns>Respuesta parseada de la operación RegFacturacionAlta</returns>
+    /// <exception cref="HttpRequestException">Error de comunicación HTTP</exception>
+    /// <exception cref="TimeoutException">Timeout en la operación</exception>
+    /// <exception cref="ArgumentException">Respuesta SOAP inválida</exception>
+    public async Task<RespuestaSuministro> EnviarRegFacturacionAltaAsync(
+        XmlDocument xmlFirmado, 
+        X509Certificate2 cert, 
+        CancellationToken ct = default)
+    {
+        var responseXml = await EnviarRegistroAsync(xmlFirmado, cert, ct);
+        return ParsearRespuestaSuministro(responseXml);
+    }
+
+    /// <summary>
+    /// Realiza una consulta de registros de facturación y parsea la respuesta automáticamente.
+    /// </summary>
+    /// <param name="xmlConsulta">Documento XML de consulta</param>
+    /// <param name="cert">Certificado digital X.509 para mTLS</param>
+    /// <param name="ct">Token de cancelación</param>
+    /// <returns>Respuesta parseada de la operación ConsultaLRFacturas</returns>
+    /// <exception cref="HttpRequestException">Error de comunicación HTTP</exception>
+    /// <exception cref="TimeoutException">Timeout en la operación</exception>
+    /// <exception cref="ArgumentException">Respuesta SOAP inválida</exception>
+    public async Task<RespuestaConsultaLR> ConsultarLRFacturasAsync(
+        XmlDocument xmlConsulta, 
+        X509Certificate2 cert, 
+        CancellationToken ct = default)
+    {
+        var responseXml = await EnviarRegistroAsync(xmlConsulta, cert, ct);
+        return ParsearRespuestaConsultaLR(responseXml);
+    }
+
+    /// <summary>
+    /// Construye el sobre SOAP 1.1 para la operación RegFacturacionAlta
+    /// según el WSDL oficial de AEAT.
     /// </summary>
     /// <param name="payload">Documento XML del registro de facturación (ya firmado)</param>
     /// <returns>Mensaje SOAP completo listo para enviar</returns>
     /// <remarks>
-    /// ESTRUCTURA SOAP 1.1:
-    /// - Namespace: http://schemas.xmlsoap.org/soap/envelope/
+    /// ESTRUCTURA SOAP 1.1 según WSDL oficial:
+    /// - Namespace SOAP: http://schemas.xmlsoap.org/soap/envelope/
+    /// - Namespace SuministroLR: https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd
+    /// - Namespace SuministroInformacion: https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd
     /// - Encoding: UTF-8
-    /// - El payload (registro firmado) se incluye dentro del Body
     /// 
-    /// IMPORTANTE: Esta es una implementación placeholder.
-    /// En producción debe ajustarse al WSDL oficial de AEAT:
-    /// https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/SistemaFacturacion.wsdl
-    /// 
-    /// La estructura real debe incluir:
-    /// - Namespace correcto del servicio AEAT (xmlns:sfe=...)
-    /// - Elemento de operación correcto (SuministroLRFacturasEmitidas, etc.)
-    /// - Cabecera con IDVersion, Titular, etc.
+    /// Referencia WSDL: docs/wsdl/README.md
+    /// Documentación: docs/Veri-Factu_Descripcion_SWeb.md (Anexo II)
     /// </remarks>
     private static string ConstruirSobreSoap(XmlDocument payload)
     {
-        // SOAP 1.1 simplificado - PLACEHOLDER
-        // TODO: Reemplazar con estructura conforme al WSDL oficial de AEAT
+        // Extraer el contenido del payload para insertarlo en la estructura SOAP correcta
+        var payloadContent = payload.OuterXml;
+        
         var sb = new StringBuilder();
         sb.Append("""
 <?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:sfLR="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd"
+                  xmlns:sf="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd">
   <soapenv:Header/>
   <soapenv:Body>
-    <EnviarRegistroRequest xmlns="urn:aeat:verifactu:placeholder">
-      <RegistroXml>
+    
 """);
-        sb.Append(payload.OuterXml);
+        sb.Append(payloadContent);
         sb.Append("""
-      </RegistroXml>
-    </EnviarRegistroRequest>
+
   </soapenv:Body>
 </soapenv:Envelope>
 """);
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Parsea la respuesta XML del servicio SOAP de AEAT para operaciones de RegFacturacionAlta
+    /// </summary>
+    /// <param name="responseXml">XML de respuesta del servidor AEAT</param>
+    /// <returns>Objeto RespuestaSuministro con los datos parseados</returns>
+    /// <exception cref="ArgumentException">Si el XML de respuesta no es válido</exception>
+    public static RespuestaSuministro ParsearRespuestaSuministro(string responseXml)
+    {
+        var doc = XDocument.Parse(responseXml);
+        
+        // Namespaces según esquema oficial
+        XNamespace soapenv = "http://schemas.xmlsoap.org/soap/envelope/";
+        XNamespace sf = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        XNamespace sfResp = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/RespuestaSuministro.xsd";
+
+        var body = doc.Root?.Element(soapenv + "Body");
+        if (body == null)
+            throw new ArgumentException("Respuesta SOAP inválida: no se encontró Body");
+
+        var respuesta = body.Element(sfResp + "RespuestaRegFactuSistemaFacturacion");
+        if (respuesta == null)
+            throw new ArgumentException("Respuesta SOAP inválida: no se encontró RespuestaRegFactuSistemaFacturacion");
+
+        var result = new RespuestaSuministro
+        {
+            CSV = respuesta.Element(sfResp + "CSV")?.Value,
+            TiempoEsperaEnvio = int.TryParse(respuesta.Element(sfResp + "TiempoEsperaEnvio")?.Value, out var tiempo) ? tiempo : null,
+            EstadoEnvio = respuesta.Element(sfResp + "EstadoEnvio")?.Value,
+            RespuestasLinea = new List<RespuestaLinea>()
+        };
+
+        // Parsear DatosPresentacion
+        var datosPres = respuesta.Element(sfResp + "DatosPresentacion");
+        if (datosPres != null)
+        {
+            result.DatosPresentacion = new DatosPresentacion
+            {
+                NIFPresentador = datosPres.Element(sf + "NIFPresentador")?.Value,
+                TimestampPresentacion = DateTime.TryParse(
+                    datosPres.Element(sf + "TimestampPresentacion")?.Value, 
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var ts) ? ts : null
+            };
+        }
+
+        // Parsear Cabecera
+        var cabecera = respuesta.Element(sfResp + "Cabecera");
+        if (cabecera != null)
+        {
+            var obligado = cabecera.Element(sf + "ObligadoEmision");
+            if (obligado != null)
+            {
+                result.Cabecera = new CabeceraRespuesta
+                {
+                    ObligadoEmision = new ObligadoEmision
+                    {
+                        NombreRazon = obligado.Element(sf + "NombreRazon")?.Value,
+                        NIF = obligado.Element(sf + "NIF")?.Value
+                    }
+                };
+            }
+        }
+
+        // Parsear RespuestaLinea (puede haber múltiples)
+        var respuestasLinea = respuesta.Elements(sfResp + "RespuestaLinea");
+        foreach (var linea in respuestasLinea)
+        {
+            var respLinea = new RespuestaLinea
+            {
+                EstadoRegistro = linea.Element(sfResp + "EstadoRegistro")?.Value,
+                CodigoErrorRegistro = linea.Element(sfResp + "CodigoErrorRegistro")?.Value,
+                DescripcionErrorRegistro = linea.Element(sfResp + "DescripcionErrorRegistro")?.Value,
+                RefExterna = linea.Element(sfResp + "RefExterna")?.Value
+            };
+
+            // IDFactura
+            var idFactura = linea.Element(sfResp + "IDFactura");
+            if (idFactura != null)
+            {
+                respLinea.IDFactura = new IDFactura
+                {
+                    IDEmisorFactura = idFactura.Element(sf + "IDEmisorFactura")?.Value,
+                    NumSerieFactura = idFactura.Element(sf + "NumSerieFactura")?.Value,
+                    FechaExpedicionFactura = DateTime.TryParse(
+                        idFactura.Element(sf + "FechaExpedicionFactura")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var fecha) ? fecha : null
+                };
+            }
+
+            // Operacion
+            var operacion = linea.Element(sfResp + "Operacion");
+            if (operacion != null)
+            {
+                respLinea.Operacion = new Operacion
+                {
+                    TipoOperacion = operacion.Element(sfResp + "TipoOperacion")?.Value,
+                    Subsanacion = operacion.Element(sfResp + "Subsanacion")?.Value,
+                    RechazoPrevio = operacion.Element(sfResp + "RechazoPrevio")?.Value,
+                    SinRegistroPrevio = operacion.Element(sfResp + "SinRegistroPrevio")?.Value
+                };
+            }
+
+            // RegistroDuplicado (si existe)
+            var duplicado = linea.Element(sfResp + "RegistroDuplicado");
+            if (duplicado != null)
+            {
+                respLinea.RegistroDuplicado = new RegistroDuplicado
+                {
+                    IdPeticionRegistroDuplicado = duplicado.Element(sfResp + "IdPeticionRegistroDuplicado")?.Value,
+                    EstadoRegistroDuplicado = duplicado.Element(sfResp + "EstadoRegistroDuplicado")?.Value,
+                    CodigoErrorRegistro = duplicado.Element(sfResp + "CodigoErrorRegistro")?.Value,
+                    DescripcionErrorRegistro = duplicado.Element(sfResp + "DescripcionErrorRegistro")?.Value
+                };
+            }
+
+            result.RespuestasLinea.Add(respLinea);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Parsea la respuesta XML del servicio SOAP de AEAT para operaciones de ConsultaLRFacturas
+    /// </summary>
+    /// <param name="responseXml">XML de respuesta del servidor AEAT</param>
+    /// <returns>Objeto RespuestaConsultaLR con los datos parseados</returns>
+    /// <exception cref="ArgumentException">Si el XML de respuesta no es válido</exception>
+    public static RespuestaConsultaLR ParsearRespuestaConsultaLR(string responseXml)
+    {
+        var doc = XDocument.Parse(responseXml);
+        
+        // Namespaces según esquema oficial
+        XNamespace soapenv = "http://schemas.xmlsoap.org/soap/envelope/";
+        XNamespace sf = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        XNamespace conResp = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/RespuestaConsultaLR.xsd";
+
+        var body = doc.Root?.Element(soapenv + "Body");
+        if (body == null)
+            throw new ArgumentException("Respuesta SOAP inválida: no se encontró Body");
+
+        var respuesta = body.Element(conResp + "RespuestaConsultaFactuSistemaFacturacion");
+        if (respuesta == null)
+            throw new ArgumentException("Respuesta SOAP inválida: no se encontró RespuestaConsultaFactuSistemaFacturacion");
+
+        var result = new RespuestaConsultaLR
+        {
+            IndicadorPaginacion = respuesta.Element(conResp + "IndicadorPaginacion")?.Value,
+            ResultadoConsulta = respuesta.Element(conResp + "ResultadoConsulta")?.Value,
+            RegistrosRespuesta = new List<RegistroRespuestaConsulta>()
+        };
+
+        // Parsear Cabecera
+        var cabecera = respuesta.Element(conResp + "Cabecera");
+        if (cabecera != null)
+        {
+            result.Cabecera = new CabeceraConsulta
+            {
+                IDVersion = cabecera.Element(sf + "IDVersion")?.Value,
+                IndicadorRepresentante = cabecera.Element(sf + "IndicadorRepresentante")?.Value
+            };
+        }
+
+        // Parsear PeriodoImputacion
+        var periodo = respuesta.Element(conResp + "PeriodoImputacion");
+        if (periodo != null)
+        {
+            result.PeriodoImputacion = new PeriodoImputacion
+            {
+                Ejercicio = int.TryParse(periodo.Element(conResp + "Ejercicio")?.Value, out var ej) ? ej : 0,
+                Periodo = periodo.Element(conResp + "Periodo")?.Value
+            };
+        }
+
+        // Parsear registros de respuesta
+        var registros = respuesta.Elements(conResp + "RegistroRespuestaConsultaFactuSistemaFacturacion");
+        foreach (var registro in registros)
+        {
+            var regResp = new RegistroRespuestaConsulta();
+
+            // IDFactura
+            var idFactura = registro.Element(conResp + "IDFactura");
+            if (idFactura != null)
+            {
+                regResp.IDFactura = new IDFactura
+                {
+                    IDEmisorFactura = idFactura.Element(sf + "IDEmisorFactura")?.Value,
+                    NumSerieFactura = idFactura.Element(sf + "NumSerieFactura")?.Value,
+                    FechaExpedicionFactura = DateTime.TryParse(
+                        idFactura.Element(sf + "FechaExpedicionFactura")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var f) ? f : null
+                };
+            }
+
+            // DatosRegistroFacturacion (simplificado)
+            var datos = registro.Element(conResp + "DatosRegistroFacturacion");
+            if (datos != null)
+            {
+                regResp.DatosRegistroFacturacion = new DatosRegistroFacturacion
+                {
+                    TipoFactura = datos.Element(conResp + "TipoFactura")?.Value,
+                    DescripcionOperacion = datos.Element(conResp + "DescripcionOperacion")?.Value,
+                    CuotaTotal = decimal.TryParse(datos.Element(conResp + "CuotaTotal")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var ct) ? ct : null,
+                    ImporteTotal = decimal.TryParse(datos.Element(conResp + "ImporteTotal")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var it) ? it : null,
+                    Huella = datos.Element(conResp + "Huella")?.Value,
+                    FechaHoraHusoGenRegistro = DateTime.TryParse(
+                        datos.Element(conResp + "FechaHoraHusoGenRegistro")?.Value,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var fh) ? fh : null
+                };
+            }
+
+            result.RegistrosRespuesta.Add(regResp);
+        }
+
+        // ClavePaginacion (si existe)
+        var clave = respuesta.Element(conResp + "ClavePaginacion");
+        if (clave != null)
+        {
+            result.ClavePaginacion = new ClavePaginacion
+            {
+                IDEmisorFactura = clave.Element(sf + "IDEmisorFactura")?.Value,
+                NumSerieFactura = clave.Element(sf + "NumSerieFactura")?.Value,
+                FechaExpedicionFactura = DateTime.TryParse(
+                    clave.Element(sf + "FechaExpedicionFactura")?.Value,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var fc) ? fc : null
+            };
+        }
+
+        return result;
     }
 }
