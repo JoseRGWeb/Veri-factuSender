@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -31,6 +32,10 @@ public class WsdlValidationTests
 {
     private readonly VerifactuSerializer _serializer;
     private readonly HashService _hashService;
+    
+    // Método para acceder a ConstruirSobreSoap usando reflexión
+    private static readonly MethodInfo ConstruirSobreSoapMethod = typeof(VerifactuSoapClient)
+        .GetMethod("ConstruirSobreSoap", BindingFlags.NonPublic | BindingFlags.Static)!;
 
     // Namespaces oficiales según WSDL de AEAT
     private const string NS_SOAP_ENVELOPE = "http://schemas.xmlsoap.org/soap/envelope/";
@@ -46,6 +51,18 @@ public class WsdlValidationTests
         _hashService = new HashService();
     }
 
+    #region Helper Methods
+
+    /// <summary>
+    /// Invoca el método privado ConstruirSobreSoap usando reflexión
+    /// </summary>
+    private static string InvocarConstruirSobreSoap(XmlDocument xmlRegistro)
+    {
+        return (string)ConstruirSobreSoapMethod.Invoke(null, new object[] { xmlRegistro })!;
+    }
+
+    #endregion
+
     #region Tests de Estructura SOAP
 
     /// <summary>
@@ -60,11 +77,8 @@ public class WsdlValidationTests
         var registro = CrearRegistroPrueba();
         var xmlRegistro = _serializer.CrearXmlRegistro(registro);
         
-        // Act - Usar reflexión para acceder al método privado ConstruirSobreSoap
-        var soapEnvelopeMethod = typeof(VerifactuSoapClient)
-            .GetMethod("ConstruirSobreSoap", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var soapEnvelope = (string)soapEnvelopeMethod!.Invoke(null, new object[] { xmlRegistro })!;
-        
+        // Act
+        var soapEnvelope = InvocarConstruirSobreSoap(xmlRegistro);
         var doc = XDocument.Parse(soapEnvelope);
         
         // Assert - Verificar estructura SOAP 1.1
@@ -94,9 +108,7 @@ public class WsdlValidationTests
         var xmlRegistro = _serializer.CrearXmlRegistro(registro);
         
         // Act
-        var soapEnvelopeMethod = typeof(VerifactuSoapClient)
-            .GetMethod("ConstruirSobreSoap", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var soapEnvelope = (string)soapEnvelopeMethod!.Invoke(null, new object[] { xmlRegistro })!;
+        var soapEnvelope = InvocarConstruirSobreSoap(xmlRegistro);
         
         // Assert - Verificar presencia de namespaces
         Assert.Contains("xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"", soapEnvelope);
@@ -117,9 +129,7 @@ public class WsdlValidationTests
         var xmlRegistro = _serializer.CrearXmlRegistro(registro);
         
         // Act & Assert - No debe lanzar excepción
-        var soapEnvelopeMethod = typeof(VerifactuSoapClient)
-            .GetMethod("ConstruirSobreSoap", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var soapEnvelope = (string)soapEnvelopeMethod!.Invoke(null, new object[] { xmlRegistro })!;
+        var soapEnvelope = InvocarConstruirSobreSoap(xmlRegistro);
         
         var exception = Record.Exception(() => XDocument.Parse(soapEnvelope));
         Assert.Null(exception);
@@ -138,9 +148,7 @@ public class WsdlValidationTests
         var xmlRegistro = _serializer.CrearXmlRegistro(registro);
         
         // Act
-        var soapEnvelopeMethod = typeof(VerifactuSoapClient)
-            .GetMethod("ConstruirSobreSoap", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var soapEnvelope = (string)soapEnvelopeMethod!.Invoke(null, new object[] { xmlRegistro })!;
+        var soapEnvelope = InvocarConstruirSobreSoap(xmlRegistro);
         
         // Assert - Verificar declaración XML con UTF-8
         Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", soapEnvelope);
@@ -159,7 +167,7 @@ public class WsdlValidationTests
     public void ParsearRespuestaSuministro_ConRespuestaValida_DebeRetornarObjeto()
     {
         // Arrange - Respuesta SOAP simulada conforme al WSDL
-        var responseXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+        var responseXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Header/>
   <soapenv:Body>
@@ -203,7 +211,7 @@ public class WsdlValidationTests
     public void ParsearRespuestaSuministro_ConEstadoParcial_DebeRetornarCorrectamente()
     {
         // Arrange
-        var responseXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+        var responseXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Body>
     <sfResp:RespuestaRegFactuSistemaFacturacion 
@@ -243,7 +251,7 @@ public class WsdlValidationTests
     public void ParsearRespuestaSuministro_ConRegistroDuplicado_DebeRetornarInformacion()
     {
         // Arrange
-        var responseXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+        var responseXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Body>
     <sfResp:RespuestaRegFactuSistemaFacturacion 
@@ -280,7 +288,7 @@ public class WsdlValidationTests
     public void ParsearRespuestaConsultaLR_ConRespuestaValida_DebeRetornarObjeto()
     {
         // Arrange
-        var responseXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+        var responseXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Body>
     <conResp:RespuestaConsultaFactuSistemaFacturacion 
@@ -347,9 +355,7 @@ public class WsdlValidationTests
         // Arrange & Act
         var registro = CrearRegistroPrueba();
         var xmlRegistro = _serializer.CrearXmlRegistro(registro);
-        var soapEnvelopeMethod = typeof(VerifactuSoapClient)
-            .GetMethod("ConstruirSobreSoap", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var soapEnvelope = (string)soapEnvelopeMethod!.Invoke(null, new object[] { xmlRegistro })!;
+        var soapEnvelope = InvocarConstruirSobreSoap(xmlRegistro);
 
         // Assert - Verificar namespaces exactos
         Assert.Contains(NS_SOAP_ENVELOPE, soapEnvelope);
