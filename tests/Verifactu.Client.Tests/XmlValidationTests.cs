@@ -17,6 +17,9 @@ namespace Verifactu.Client.Tests;
 /// </summary>
 public class XmlValidationTests
 {
+    // Namespace oficial de AEAT para SuministroInformacion
+    private const string NsAeat = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+    
     private readonly ITestOutputHelper _output;
     private readonly string _xsdPath;
     private readonly bool _xsdDisponibles;
@@ -50,8 +53,11 @@ public class XmlValidationTests
         var currentDir = Directory.GetCurrentDirectory();
         var dirInfo = new DirectoryInfo(currentDir);
         
-        // Buscar hacia arriba hasta encontrar el archivo .sln
-        while (dirInfo != null)
+        // Buscar hacia arriba hasta encontrar el archivo .sln (máximo 10 niveles)
+        const int maxDepth = 10;
+        int depth = 0;
+        
+        while (dirInfo != null && depth < maxDepth)
         {
             if (dirInfo.GetFiles("*.sln").Length > 0)
             {
@@ -62,6 +68,7 @@ public class XmlValidationTests
                 }
             }
             dirInfo = dirInfo.Parent;
+            depth++;
         }
         
         // Ruta por defecto
@@ -324,7 +331,7 @@ public class XmlValidationTests
         var registro = CrearRegistroEjemplo();
         var xmlDoc = serializer.CrearXmlRegistro(registro);
         
-        var namespaceEsperado = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var namespaceEsperado = NsAeat;
 
         // Act
         var namespaceActual = xmlDoc.DocumentElement?.NamespaceURI;
@@ -368,7 +375,7 @@ public class XmlValidationTests
 
         var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
         nsmgr.AddNamespace("sum1", 
-            "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd");
+            NsAeat);
 
         // Act
         var fechaExpedicion = xmlDoc.SelectSingleNode("//sum1:FechaExpedicionFactura", nsmgr)?.InnerText;
@@ -398,7 +405,7 @@ public class XmlValidationTests
 
         var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
         nsmgr.AddNamespace("sum1", 
-            "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd");
+            NsAeat);
 
         // Act
         var cuotaTotal = xmlDoc.SelectSingleNode("//sum1:CuotaTotal", nsmgr)?.InnerText;

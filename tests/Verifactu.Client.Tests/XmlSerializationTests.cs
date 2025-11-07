@@ -13,6 +13,9 @@ namespace Verifactu.Client.Tests;
 /// </summary>
 public class XmlSerializationTests
 {
+    // Namespace oficial de AEAT para SuministroInformacion
+    private const string NsAeat = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+
     private RegistroFacturacion CrearRegistroEjemplo()
     {
         var factura = new Factura(
@@ -93,7 +96,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var expectedNamespace = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var expectedNamespace = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -110,7 +113,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -138,7 +141,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -164,7 +167,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -190,7 +193,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -212,7 +215,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -237,7 +240,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo();
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -300,7 +303,7 @@ public class XmlSerializationTests
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
         var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
         nsmgr.AddNamespace("sum1", ns);
 
@@ -319,7 +322,7 @@ public class XmlSerializationTests
         // Arrange
         var serializer = new VerifactuSerializer();
         var registro = CrearRegistroEjemplo() with { HuellaAnterior = null };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -348,7 +351,7 @@ public class XmlSerializationTests
             CuotaTotal = 27,
             ImporteTotal = 202
         };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -371,7 +374,7 @@ public class XmlSerializationTests
             TipoFactura = TipoFactura.F2,
             Destinatario = null 
         };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -390,7 +393,7 @@ public class XmlSerializationTests
         var serializer = new VerifactuSerializer();
         var destinatarioSinNif = new Receptor(null, "CLIENTE EXTRANJERO");
         var registro = CrearRegistroEjemplo() with { Destinatario = destinatarioSinNif };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -419,7 +422,7 @@ public class XmlSerializationTests
             CuotaTotal = 123.456m,  // Debe redondearse a 123.46
             ImporteTotal = 654.321m  // Debe redondearse a 654.32
         };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -448,7 +451,7 @@ public class XmlSerializationTests
         {
             FechaHoraHusoGenRegistro = fechaHora
         };
-        var ns = "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd";
+        var ns = NsAeat;
 
         // Act
         var xmlDoc = serializer.CrearXmlRegistro(registro);
@@ -492,7 +495,7 @@ public class XmlSerializationTests
         Assert.NotNull(xmlDoc.DocumentElement);
         var xmlns = xmlDoc.DocumentElement.GetAttribute("xmlns:sum1");
         Assert.Equal(
-            "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd",
+            NsAeat,
             xmlns);
     }
 }
