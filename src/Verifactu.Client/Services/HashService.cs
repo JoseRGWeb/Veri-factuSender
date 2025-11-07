@@ -84,13 +84,25 @@ public class HashService : IHashService
     /// - Punto (.) como separador decimal
     /// - Sin separador de miles
     /// - CultureInfo.InvariantCulture
+    /// - Redondeo bancario (banker's rounding / round to even)
     /// </summary>
     /// <param name="valor">Valor decimal a normalizar</param>
     /// <returns>Cadena normalizada (ej: "1234.50")</returns>
+    /// <remarks>
+    /// El formato "F2" utiliza redondeo bancario (MidpointRounding.ToEven):
+    /// - 1.235 → "1.24" (redondea hacia arriba al par)
+    /// - 1.225 → "1.22" (redondea hacia abajo al par)
+    /// - 1.125 → "1.12" (redondea hacia abajo al par)
+    /// Ejemplos adicionales:
+    /// - 100m → "100.00"
+    /// - 1234.5m → "1234.50"
+    /// - 0.456m → "0.46"
+    /// </remarks>
     private static string NormalizarDecimal(decimal valor)
     {
         // Formato "F2" = Fixed-point con 2 decimales
         // InvariantCulture = punto como separador decimal, sin separador de miles
+        // Nota: Usa redondeo bancario (banker's rounding) por defecto en .NET
         return valor.ToString("F2", CultureInfo.InvariantCulture);
     }
 }

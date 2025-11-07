@@ -65,7 +65,7 @@ public class HashServiceTests
     /// Test: verifica que pequeños cambios generen huellas completamente diferentes
     /// </summary>
     [Fact]
-    public void CalculaHuella_CambiosPequeniosGeneranHuellasDiferentes()
+    public void CalculaHuella_CambiosPequeñosGeneranHuellasDiferentes()
     {
         var registro1 = CrearRegistroPrueba();
         var registro2 = CrearRegistroPrueba() with { ImporteTotal = 121.01m }; // Cambio de 1 céntimo
