@@ -2,6 +2,8 @@
   "Serie": "A",
   "Numero": "2025-0001",
   "FechaEmision": "2025-10-28T14:30:00",
+  "TipoFactura": 0,
+  "DescripcionOperacion": "Servicios de desarrollo web personalizados",
   "Emisor": {
     "Nif": "B12345678",
     "Nombre": "JRWEB, S.L.U.",
