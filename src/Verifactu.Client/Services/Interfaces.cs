@@ -37,8 +37,47 @@ public interface IXmlSignerService
 
 public interface ICertificateLoader
 {
+    /// <summary>
+    /// Carga un certificado desde un archivo PFX/PKCS#12.
+    /// </summary>
+    /// <param name="rutaPfx">Ruta completa al archivo PFX</param>
+    /// <param name="password">Contraseña del archivo PFX</param>
+    /// <returns>Certificado X.509 con clave privada</returns>
     X509Certificate2 CargarDesdePfx(string rutaPfx, string password);
-    // (Opcional) método para cargar desde almacén del sistema
+    
+    /// <summary>
+    /// Carga un certificado desde el almacén de certificados del sistema operativo.
+    /// </summary>
+    /// <param name="thumbprint">Huella digital (thumbprint) del certificado en formato hexadecimal</param>
+    /// <param name="location">Ubicación del almacén (CurrentUser o LocalMachine)</param>
+    /// <param name="storeName">Nombre del almacén (por defecto: My)</param>
+    /// <returns>Certificado X.509 con clave privada</returns>
+    X509Certificate2 CargarDesdeAlmacen(
+        string thumbprint, 
+        StoreLocation location = StoreLocation.CurrentUser,
+        StoreName storeName = StoreName.My);
+    
+    /// <summary>
+    /// Valida que un certificado cumple los requisitos mínimos para VERI*FACTU.
+    /// </summary>
+    /// <param name="certificate">Certificado a validar</param>
+    /// <returns>True si el certificado es válido</returns>
+    /// <exception cref="InvalidOperationException">Si el certificado no cumple los requisitos</exception>
+    bool ValidarCertificado(X509Certificate2 certificate);
+    
+    /// <summary>
+    /// Calcula el tiempo restante hasta la expiración del certificado.
+    /// </summary>
+    /// <param name="certificate">Certificado a verificar</param>
+    /// <returns>TimeSpan hasta la expiración (negativo si ya expiró)</returns>
+    TimeSpan TiempoHastaExpiracion(X509Certificate2 certificate);
+    
+    /// <summary>
+    /// Obtiene información detallada sobre un certificado.
+    /// </summary>
+    /// <param name="certificate">Certificado del cual obtener información</param>
+    /// <returns>Objeto con información detallada del certificado</returns>
+    CertificateInfo ObtenerInformacion(X509Certificate2 certificate);
 }
 
 public interface IVerifactuSoapClient

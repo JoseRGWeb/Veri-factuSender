@@ -1,0 +1,54 @@
+{
+  "_Comment": "Este es un archivo de ejemplo para desarrollo",
+  "_Comment_Uso": "Copia este archivo a 'appsettings.Development.json' y configura tus valores",
+  "_Comment_GitIgnore": "appsettings.Development.json está en .gitignore para proteger secretos",
+  
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft": "Information",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "System.Net.Http.HttpClient": "Debug",
+      "Verifactu": "Debug"
+    },
+    "Console": {
+      "FormatterName": "simple",
+      "FormatterOptions": {
+        "SingleLine": true,
+        "TimestampFormat": "yyyy-MM-dd HH:mm:ss "
+      }
+    }
+  },
+  "Certificado": {
+    "_Comment": "DESARROLLO: Usar 'dotnet user-secrets' o variables de entorno para credenciales",
+    "_Comment_UserSecrets_Setup": "1. Ejecuta: dotnet user-secrets init (en el directorio del proyecto)",
+    "_Comment_UserSecrets_Set": "2. Ejecuta: dotnet user-secrets set 'Certificado:PfxPassword' 'tu-password'",
+    "_Comment_UserSecrets_SetPath": "3. Ejecuta: dotnet user-secrets set 'Certificado:PfxPath' '/ruta/a/certificado.pfx'",
+    "_Comment_VariablesEntorno": "O establece variables de entorno: CERTIFICADO__PFXPASSWORD=tu-password",
+    "_Comment_AlmacenCertificados": "Para usar almacén de certificados del sistema: Cambia Tipo a 'Almacen' y configura Thumbprint",
+    
+    "_Opcion1_Archivo": "Carga desde archivo PFX",
+    "Tipo": "Archivo",
+    "PfxPath": "",
+    "PfxPassword": "",
+    
+    "_Opcion2_Almacen": "Carga desde almacén de certificados del sistema Windows",
+    "_Tipo_Almacen": "Almacen",
+    "Thumbprint": "",
+    "StoreLocation": "CurrentUser",
+    "StoreName": "My"
+  },
+  "Verifactu": {
+    "Environment": "Development",
+    "EndpointUrl": "https://prewww1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion",
+    "SoapAction": "RegFacturacionAlta",
+    "Timeout": 30,
+    "HuellaAnterior": "",
+    "SistemaInfo": {
+      "NombreRazon": "JRWEB, S.L.U.",
+      "Nif": "B12345678",
+      "IdSistema": "1",
+      "NumeroInstalacion": "1"
+    }
+  }
+}

@@ -24,12 +24,20 @@ Esta guía te ayudará a configurar VerifactuSender en tu entorno de desarrollo.
 
 ### Certificado Digital
 
-Necesitarás un **certificado de representante** en formato PFX:
+Necesitarás un **certificado digital** para autenticación con VERI*FACTU:
 
+**Requisitos:**
 - Certificado válido emitido por una autoridad certificadora reconocida
 - Con clave privada incluida
-- Contraseña del certificado
-- Permisos de lectura sobre el archivo PFX
+- RSA mínimo 2048 bits o ECDSA mínimo 256 bits
+- Algoritmo SHA-256 o superior
+
+**Opciones de Configuración:**
+1. **Archivo PFX**: Para desarrollo local (requiere contraseña)
+2. **Almacén de Certificados de Windows**: Para producción (recomendado)
+3. **Variables de Entorno**: Para CI/CD y contenedores
+
+> 📚 **Guía completa**: Ver [Certificados y Seguridad](./certificados-y-seguridad.md) para instrucciones detalladas sobre gestión de certificados, validación, y mejores prácticas de seguridad.
 
 ## Instalación
 
@@ -77,55 +85,98 @@ Todos los tests deberían pasar exitosamente.
 
 ### Configuración de la Aplicación de Demo
 
-#### 1. Configurar appsettings.json
+#### 1. Configurar Certificado
 
-Navega a la aplicación de demostración:
+VerifactuSender soporta múltiples métodos de carga de certificados. Elige el más apropiado para tu entorno:
 
-```bash
-cd src/Verifactu.ConsoleDemo
-```
+##### Opción A: Archivo PFX (Desarrollo)
 
-Edita el archivo `appsettings.json`:
+Edita `appsettings.json`:
 
 ```json
 {
   "Certificado": {
-    "PfxPath": "C:/ruta/completa/a/tu-certificado.pfx",
-    "PfxPassword": "TU_CONTRASEÑA_SEGURA"
-  },
-  "Verifactu": {
-    "EndpointUrl": "https://prewww1.aeat.es/wlpl/TIKE-CONT/ValidarQR",
-    "SoapAction": "urn:EnviarRegistroFacturacion",
-    "HuellaAnterior": ""
+    "Tipo": "Archivo",
+    "PfxPath": "/ruta/completa/a/certificado.pfx",
+    "PfxPassword": ""  // No guardar aquí, usar user-secrets
   }
 }
 ```
 
-**⚠️ Importante:**
-- Reemplaza `C:/ruta/completa/a/tu-certificado.pfx` con la ruta real a tu certificado
-- Reemplaza `TU_CONTRASEÑA_SEGURA` con la contraseña de tu certificado
-- El `EndpointUrl` es un placeholder; usa el endpoint oficial de AEAT cuando esté disponible
-
-#### 2. Proteger Datos Sensibles (Recomendado)
-
-En lugar de guardar la contraseña en `appsettings.json`, usa **User Secrets**:
-
+**Configurar contraseña con User Secrets:**
 ```bash
-# Desde src/Verifactu.ConsoleDemo/
+cd src/Verifactu.ConsoleDemo
 dotnet user-secrets init
-dotnet user-secrets set "Certificado:PfxPassword" "TU_CONTRASEÑA_SEGURA"
+dotnet user-secrets set "Certificado:PfxPassword" "tu-password-segura"
+dotnet user-secrets set "Certificado:PfxPath" "/ruta/a/certificado.pfx"
 ```
 
-Luego actualiza `appsettings.json` para no incluir la contraseña:
+##### Opción B: Almacén de Certificados (Producción - Recomendado)
 
+**Paso 1**: Instalar el certificado en Windows:
+```powershell
+# Usar el script de ayuda
+.\scripts\setup-certificates.ps1 -PfxPath "C:\certs\certificado.pfx"
+
+# O instalar manualmente usando certmgr.msc
+```
+
+**Paso 2**: Configurar en `appsettings.json`:
 ```json
 {
   "Certificado": {
-    "PfxPath": "C:/ruta/completa/a/tu-certificado.pfx"
-  },
+    "Tipo": "Almacen",
+    "Thumbprint": "3B7E039FDBDA89ABC...",  // Obtenido del script o certmgr.msc
+    "StoreLocation": "CurrentUser",
+    "StoreName": "My"
+  }
+}
+```
+
+##### Opción C: Variables de Entorno (CI/CD)
+
+```bash
+# Linux/macOS
+export CERTIFICADO__TIPO="Archivo"
+export CERTIFICADO__PFXPATH="/opt/certs/certificado.pfx"
+export CERTIFICADO__PFXPASSWORD="password-segura"
+
+# Windows PowerShell
+$env:CERTIFICADO__TIPO = "Almacen"
+$env:CERTIFICADO__THUMBPRINT = "ABC123..."
+$env:CERTIFICADO__STORELOCATION = "CurrentUser"
+```
+
+##### Validar Certificado
+
+Usa el script de diagnóstico para verificar que tu certificado cumple los requisitos:
+
+```powershell
+# Validar archivo PFX
+.\scripts\diagnose-certificates.ps1 -PfxPath "certificado.pfx"
+
+# Validar certificado instalado
+.\scripts\diagnose-certificates.ps1 -Thumbprint "ABC123..."
+
+# Listar todos los certificados disponibles
+.\scripts\diagnose-certificates.ps1 -ListAll
+```
+
+> 📚 **Más información**: Consulta la [Guía de Certificados y Seguridad](./certificados-y-seguridad.md) para:
+> - Requisitos detallados de VERI*FACTU
+> - Troubleshooting de certificados
+> - Mejores prácticas de seguridad
+> - Gestión del ciclo de vida
+
+#### 2. Configurar Endpoint de VERI*FACTU
+
+Actualiza la configuración del servicio VERI*FACTU en el archivo apropiado:
+
+```json
+{
   "Verifactu": {
-    "EndpointUrl": "https://...",
-    "SoapAction": "urn:EnviarRegistroFacturacion",
+    "EndpointUrl": "https://prewww1.aeat.es/wlpl/TIKE-CONT/SistemaFacturacion",
+    "SoapAction": "RegFacturacionAlta",
     "HuellaAnterior": ""
   }
 }

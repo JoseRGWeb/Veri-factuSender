@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Configuration;
 using Verifactu.Client.Models;
 using Verifactu.Client.Services;
@@ -11,15 +12,58 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-var certPath = config["Certificado:PfxPath"] ?? "/path/certificado.pfx";
-var certPass = config["Certificado:PfxPassword"] ?? "PFX_PASSWORD";
+// 2) Cargar certificado según configuración
+ICertificateLoader certLoader = new CertificateLoader();
+X509Certificate2 cert;
+
+var certTipo = config["Certificado:Tipo"] ?? "Archivo";
+Console.WriteLine($"Método de carga de certificado: {certTipo}");
+
+switch (certTipo.ToLowerInvariant())
+{
+    case "almacen":
+    case "store":
+        // Cargar desde almacén de certificados del sistema
+        var thumbprint = config["Certificado:Thumbprint"] 
+            ?? throw new InvalidOperationException("Se requiere Certificado:Thumbprint para tipo 'Almacen'");
+        
+        var storeLocationStr = config["Certificado:StoreLocation"] ?? "CurrentUser";
+        var storeLocation = Enum.Parse<StoreLocation>(storeLocationStr, ignoreCase: true);
+        
+        var storeNameStr = config["Certificado:StoreName"] ?? "My";
+        var storeName = Enum.Parse<StoreName>(storeNameStr, ignoreCase: true);
+        
+        cert = certLoader.CargarDesdeAlmacen(thumbprint, storeLocation, storeName);
+        Console.WriteLine($"Certificado cargado desde almacén {storeLocation}\\{storeName}");
+        break;
+
+    case "archivo":
+    case "file":
+    case "pfx":
+    default:
+        // Cargar desde archivo PFX (método tradicional)
+        var certPath = config["Certificado:PfxPath"] 
+            ?? throw new InvalidOperationException("Se requiere Certificado:PfxPath para tipo 'Archivo'");
+        var certPass = config["Certificado:PfxPassword"] 
+            ?? throw new InvalidOperationException("Se requiere Certificado:PfxPassword. Usa 'dotnet user-secrets' o variables de entorno.");
+        
+        cert = certLoader.CargarDesdePfx(certPath, certPass);
+        Console.WriteLine($"Certificado cargado desde archivo: {certPath}");
+        break;
+}
+
+// Mostrar información del certificado
+var certInfo = certLoader.ObtenerInformacion(cert);
+Console.WriteLine($"Subject: {certInfo.Subject}");
+Console.WriteLine($"Issuer: {certInfo.Issuer}");
+Console.WriteLine($"Thumbprint: {certInfo.Thumbprint}");
+Console.WriteLine($"Válido desde: {certInfo.NotBefore:yyyy-MM-dd} hasta: {certInfo.NotAfter:yyyy-MM-dd}");
+Console.WriteLine($"Días hasta expiración: {certInfo.TiempoHastaExpiracion.TotalDays:F0}");
+Console.WriteLine($"Tipo de clave: {certInfo.TipoClave} ({certInfo.TamanoClaveBits} bits)");
+Console.WriteLine();
+
 var endpoint = config["Verifactu:EndpointUrl"] ?? "https://example.com/verifactu/ws";
 var soapAction = config["Verifactu:SoapAction"] ?? "urn:EnviarRegistroFacturacion";
-
-// 2) Cargar certificado
-ICertificateLoader certLoader = new CertificateLoader();
-var cert = certLoader.CargarDesdePfx(certPath, certPass);
-Console.WriteLine($"Certificado cargado: {cert.Subject}");
 
 // 3) Cargar factura demo (json) y construir modelo
 var facturaJson = await File.ReadAllTextAsync("factura-demo.json");
