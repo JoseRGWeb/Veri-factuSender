@@ -1,5 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
+using System.Xml.Schema;
 
 using Verifactu.Client.Models;
 
@@ -18,7 +19,6 @@ public interface IVerifactuSerializer
 {
     /// <summary>
     /// Crea el XML del registro conforme a los XSD de AEAT.
-    /// Esta versión genera un XML placeholder.
     /// </summary>
     XmlDocument CrearXmlRegistro(RegistroFacturacion registro);
 }
@@ -45,4 +45,14 @@ public interface IVerifactuSoapClient
     /// Retorna la respuesta SOAP cruda (para parseo posterior).
     /// </summary>
     Task<string> EnviarRegistroAsync(XmlDocument xmlFirmado, X509Certificate2 cert, CancellationToken ct = default);
+}
+
+public interface IXmlValidationService
+{
+    /// <summary>
+    /// Valida un documento XML contra los esquemas XSD oficiales de AEAT.
+    /// Retorna true si es válido, false si hay errores.
+    /// Los errores se reportan mediante el callback validationEventHandler.
+    /// </summary>
+    bool ValidarContraXsd(XmlDocument xmlDoc, ValidationEventHandler? validationEventHandler = null);
 }
