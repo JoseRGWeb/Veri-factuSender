@@ -1,0 +1,106 @@
+name: Integration Tests
+
+# Los tests de integración solo se ejecutan manualmente o en push a main
+# Requieren certificado válido configurado como secreto de GitHub
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_performance_tests:
+        description: 'Ejecutar también tests de rendimiento'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/Verifactu.Integration.Tests/**'
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests (Sandbox)
+    runs-on: ubuntu-latest
+    # Solo ejecutar en workflow_dispatch o push a main
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    
+    env:
+      HAS_CERTIFICATE: ${{ secrets.TEST_CERT_PFX != '' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+    
+    # Configurar certificado si está disponible en secretos
+    - name: Setup test certificate
+      if: env.HAS_CERTIFICATE == 'true'
+      run: |
+        echo "${{ secrets.TEST_CERT_PFX }}" | base64 -d > /tmp/test-cert.pfx
+        chmod 600 /tmp/test-cert.pfx
+      
+    - name: Run integration tests (without certificate)
+      if: env.HAS_CERTIFICATE != 'true'
+      run: |
+        echo "ℹ️ No se encontró certificado configurado en secretos"
+        echo "Los tests de integración se ejecutarán pero se omitirán (skip)"
+        dotnet test --no-build --configuration Release \
+          --filter "Category=Integration" \
+          --logger "trx;LogFileName=integration-test-results.trx" \
+          --logger "console;verbosity=detailed"
+      
+    - name: Run integration tests (with certificate)
+      if: env.HAS_CERTIFICATE == 'true'
+      env:
+        Certificado__PfxPath: /tmp/test-cert.pfx
+        Certificado__PfxPassword: ${{ secrets.TEST_CERT_PASSWORD }}
+      run: |
+        dotnet test --no-build --configuration Release \
+          --filter "Category=Integration&Category!=Performance" \
+          --logger "trx;LogFileName=integration-test-results.trx" \
+          --logger "console;verbosity=detailed"
+      
+    - name: Run performance tests
+      if: env.HAS_CERTIFICATE == 'true' && github.event.inputs.run_performance_tests == 'true'
+      env:
+        Certificado__PfxPath: /tmp/test-cert.pfx
+        Certificado__PfxPassword: ${{ secrets.TEST_CERT_PASSWORD }}
+      run: |
+        dotnet test --no-build --configuration Release \
+          --filter "Category=Performance" \
+          --logger "trx;LogFileName=performance-test-results.trx" \
+          --logger "console;verbosity=detailed"
+      
+    - name: Cleanup certificate
+      if: always()
+      run: |
+        rm -f /tmp/test-cert.pfx
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results
+        path: '**/*-test-results.trx'
+        
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Integration Test Results
+        path: '**/*-test-results.trx'
+        reporter: dotnet-trx
